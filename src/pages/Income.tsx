@@ -262,12 +262,14 @@ export function Income() {
                   className="flex items-center gap-3 rounded-lg border px-3 py-2.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{s.name}</span>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="min-w-0 break-words font-medium text-foreground">
+                        {s.name}
+                      </span>
                       <Badge tone="brand">{s.type}</Badge>
                       {s.isFixed && <Badge tone="slate">固定</Badge>}
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                    <p className="mt-0.5 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                       每月 {s.payday} 号 · {formatCurrency(s.amount, cur)}
                       {s.note ? ` · ${s.note}` : ''}
                     </p>

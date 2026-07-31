@@ -40,20 +40,20 @@ export function useChartTheme(): ChartTheme {
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === 'dark';
   return {
-    income: dark ? '#34d399' : '#10b981',
-    expense: dark ? '#f87171' : '#ef4444',
-    balance: dark ? '#818cf8' : '#6366f1',
-    grid: dark ? '#27272a' : '#f1f5f9',
+    income: dark ? '#5dd1a0' : '#318c68',
+    expense: dark ? '#f07b82' : '#d75d66',
+    balance: dark ? '#9296ee' : '#6f73d2',
+    grid: dark ? '#242429' : '#ececf0',
     axis: dark ? '#a1a1aa' : '#94a3b8',
     axisStrong: dark ? '#d4d4d8' : '#64748b',
     cursor: dark ? 'rgba(255,255,255,0.06)' : '#f8fafc',
     tooltip: {
-      borderRadius: 8,
+      borderRadius: 12,
       border: `1px solid ${dark ? '#27272a' : '#e2e8f0'}`,
       backgroundColor: dark ? '#18181b' : '#ffffff',
       color: dark ? '#fafafa' : '#0f172a',
       fontSize: 12,
-      boxShadow: '0 4px 12px -2px rgba(0,0,0,0.12)',
+      boxShadow: '0 18px 45px -22px rgba(15,23,42,0.42)',
     },
   };
 }
@@ -79,35 +79,45 @@ export function CategoryDonut({
   const chart = useChartTheme();
   const filtered = data.filter((d) => d.value > 0);
   if (filtered.length === 0) return <EmptyChart text="本月暂无支出" />;
+  const total = filtered.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <PieChart>
-        <Pie
-          data={filtered}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          innerRadius={55}
-          outerRadius={85}
-          paddingAngle={2}
-        >
-          {filtered.map((d) => (
-            <Cell key={d.name} fill={colorForCategory(d.name)} />
-          ))}
-        </Pie>
-        <Tooltip
-          contentStyle={chart.tooltip}
-          formatter={(v: number) => formatCurrency(v, currency)}
-        />
-        <Legend
-          iconType="circle"
-          iconSize={8}
-          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-        />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="relative" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={filtered}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="45%"
+            innerRadius={58}
+            outerRadius={84}
+            paddingAngle={3}
+            cornerRadius={5}
+          >
+            {filtered.map((d) => (
+              <Cell key={d.name} fill={colorForCategory(d.name)} stroke="transparent" />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={chart.tooltip}
+            formatter={(v: number) => formatCurrency(v, currency)}
+          />
+          <Legend
+            iconType="circle"
+            iconSize={7}
+            wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="pointer-events-none absolute left-1/2 top-[45%] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center">
+        <span className="text-[10px] text-muted-foreground">总支出</span>
+        <span className="mt-0.5 max-w-[5.5rem] truncate text-xs font-semibold text-foreground">
+          {formatCurrency(total, currency)}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -130,11 +140,11 @@ export function IncomeExpenseTrend({
       <AreaChart data={data} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
         <defs>
           <linearGradient id="gIncome" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={chart.income} stopOpacity={0.3} />
+            <stop offset="5%" stopColor={chart.income} stopOpacity={0.22} />
             <stop offset="95%" stopColor={chart.income} stopOpacity={0} />
           </linearGradient>
           <linearGradient id="gExpense" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={chart.expense} stopOpacity={0.3} />
+            <stop offset="5%" stopColor={chart.expense} stopOpacity={0.18} />
             <stop offset="95%" stopColor={chart.expense} stopOpacity={0} />
           </linearGradient>
         </defs>
@@ -151,8 +161,8 @@ export function IncomeExpenseTrend({
           wrapperStyle={{ fontSize: 12 }}
           formatter={(v) => (v === 'income' ? '收入' : '支出')}
         />
-        <Area type="monotone" dataKey="income" stroke={chart.income} strokeWidth={2} fill="url(#gIncome)" />
-        <Area type="monotone" dataKey="expense" stroke={chart.expense} strokeWidth={2} fill="url(#gExpense)" />
+        <Area type="monotone" dataKey="income" stroke={chart.income} strokeWidth={2.25} fill="url(#gIncome)" />
+        <Area type="monotone" dataKey="expense" stroke={chart.expense} strokeWidth={2.25} fill="url(#gExpense)" />
       </AreaChart>
     </ResponsiveContainer>
   );

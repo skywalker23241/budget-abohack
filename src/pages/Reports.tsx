@@ -174,30 +174,32 @@ export function Reports() {
         actions={<MonthPicker month={month} onChange={setMonth} />}
       />
 
-      <AppSummaryCard
-        eyebrow={formatMonthLabel(month)}
-        title={r.balance >= 0 ? '本月结余' : '本月缺口'}
-        value={formatCurrency(Math.abs(r.balance), cur)}
-        subtitle={
-          r.maxCat
-            ? `最大支出是 ${r.maxCat.category}，占本月支出的 ${formatPercent(
-                r.catTotal > 0 ? r.maxCat.amount / r.catTotal : 0,
-              )}。`
-            : '本月还没有支出记录，报表会在记账后自动生成。'
-        }
-        accent={
-          r.balance < 0
-            ? 'danger'
-            : r.rate >= settings.savingsRateTarget / 100
-              ? 'success'
-              : 'warning'
-        }
-        meta={[
-          { label: '收入', value: formatCurrency(r.income, cur) },
-          { label: '支出', value: formatCurrency(r.expense, cur) },
-          { label: '储蓄率', value: formatPercent(r.rate) },
-        ]}
-      />
+      <div data-tour="report-summary">
+        <AppSummaryCard
+          eyebrow={formatMonthLabel(month)}
+          title={r.balance >= 0 ? '本月结余' : '本月缺口'}
+          value={formatCurrency(Math.abs(r.balance), cur)}
+          subtitle={
+            r.maxCat
+              ? `最大支出是 ${r.maxCat.category}，占本月支出的 ${formatPercent(
+                  r.catTotal > 0 ? r.maxCat.amount / r.catTotal : 0,
+                )}。`
+              : '本月还没有支出记录，报表会在记账后自动生成。'
+          }
+          accent={
+            r.balance < 0
+              ? 'danger'
+              : r.rate >= settings.savingsRateTarget / 100
+                ? 'success'
+                : 'warning'
+          }
+          meta={[
+            { label: '收入', value: formatCurrency(r.income, cur) },
+            { label: '支出', value: formatCurrency(r.expense, cur) },
+            { label: '储蓄率', value: formatPercent(r.rate) },
+          ]}
+        />
+      </div>
 
       <MobileCollapsibleSection
         className="mt-4"

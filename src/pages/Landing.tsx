@@ -43,7 +43,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   WalletCards,
-} from 'lucide-react';
+} from '@/components/Icons';
 import { Button } from '@/components/ui';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/components/theme-provider';
@@ -357,8 +357,8 @@ function LiveOverview() {
 
   return (
     <section id="overview" className="border-b bg-muted/25 py-14 sm:py-18">
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
-        <div className="rounded-lg border bg-card p-5 shadow-sm">
+      <div className="mx-auto grid min-w-0 max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+        <div className="min-w-0 rounded-lg border bg-card p-5 shadow-sm">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-sm text-muted-foreground">实时预算余额</p>
@@ -911,7 +911,7 @@ export function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <LandingHeader onCommandOpen={() => setCommandOpen(true)} />
       <HeroSection onCommandOpen={() => setCommandOpen(true)} />
       <LiveOverview />

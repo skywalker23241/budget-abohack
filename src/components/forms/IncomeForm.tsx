@@ -60,7 +60,7 @@ export function IncomeForm({ initial, onClose }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="收入名称" required error={errors.name}>
           <Input
             placeholder="如：主职工资"
@@ -77,7 +77,7 @@ export function IncomeForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="金额" required error={errors.amount}>
           <Input
             type="number"

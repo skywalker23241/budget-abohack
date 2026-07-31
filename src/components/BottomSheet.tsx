@@ -32,7 +32,7 @@ export function BottomSheet({
     >
       <DialogContent
         className={cn(
-          'bottom-0 left-0 top-auto max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-t-lg border-x-0 border-b-0 p-0 shadow-2xl data-[state=open]:duration-300 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:max-h-[92vh] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border',
+          'bottom-0 left-0 top-auto max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-t-lg border-x-0 border-b-0 p-0 shadow-2xl data-[state=open]:duration-300 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:max-h-[92dvh] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border',
           className,
         )}
       >
@@ -42,7 +42,7 @@ export function BottomSheet({
         <DialogHeader className="border-b px-5 py-4 text-left">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[calc(88dvh-8.5rem)] overflow-y-auto px-5 py-4 sm:max-h-[calc(92vh-8rem)]">
+        <div className="app-scroll-region min-h-0 overflow-y-auto px-5 py-4">
           {children}
         </div>
         {footer && (

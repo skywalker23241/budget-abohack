@@ -153,7 +153,7 @@ export function Goals() {
         title="财务目标"
         subtitle="设定目标，追踪每一步进展"
         actions={
-          <Button onClick={openAdd}>
+          <Button data-tour="goal-add" onClick={openAdd}>
             <IconPlus className="h-4 w-4" />
             新增目标
           </Button>
@@ -252,19 +252,21 @@ export function Goals() {
                     : `约 ${months} 个月（${formatMonthLabel(addMonths(currentMonth(), months))}）`;
               return (
                 <Card key={g.id}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{g.name}</span>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="min-w-0 break-words font-semibold text-foreground">
+                          {g.name}
+                        </span>
                         <Badge tone="blue">{g.type}</Badge>
                         <Badge tone={meta.tone}>{meta.label}</Badge>
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                         截止 {g.deadline}
                         {g.note ? ` · ${g.note}` : ''}
                       </p>
                     </div>
-                    <div className="flex">
+                    <div className="flex shrink-0">
                       <button
                         onClick={() => openEdit(g)}
                         className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -283,11 +285,11 @@ export function Goals() {
                   </div>
 
                   <div className="mt-4">
-                    <div className="mb-1.5 flex items-baseline justify-between">
-                      <span className="text-lg font-semibold text-foreground">
+                    <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <span className="break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
                         {formatCurrency(g.currentAmount, cur)}
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
                         / {formatCurrency(g.targetAmount, cur)}
                       </span>
                     </div>
@@ -300,20 +302,20 @@ export function Goals() {
                     </p>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-muted p-3 text-center text-xs">
+                  <div className="mt-3 grid grid-cols-1 gap-2 rounded-lg bg-muted p-3 text-center text-xs min-[480px]:grid-cols-3">
                     <div>
                       <p className="text-muted-foreground">还差</p>
-                      <p className="mt-0.5 font-semibold text-foreground">
+                      <p className="mt-0.5 break-words font-semibold text-foreground [overflow-wrap:anywhere]">
                         {formatCurrency(remaining, cur)}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">预计完成</p>
-                      <p className="mt-0.5 font-semibold text-foreground">{eta}</p>
+                      <p className="mt-0.5 break-words font-semibold text-foreground">{eta}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">建议月投</p>
-                      <p className="mt-0.5 font-semibold text-foreground">
+                      <p className="mt-0.5 break-words font-semibold text-foreground [overflow-wrap:anywhere]">
                         {formatCurrency(suggested, cur)}
                       </p>
                     </div>

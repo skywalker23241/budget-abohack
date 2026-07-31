@@ -198,17 +198,19 @@ export function Loans() {
               const dueSoon = l.remindEnabled && !paidOff && days <= 3;
               return (
                 <Card key={l.id} className={dueSoon ? 'ring-1 ring-warning/30' : ''}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{l.name}</span>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="min-w-0 break-words font-semibold text-foreground">
+                          {l.name}
+                        </span>
                         <Badge tone="slate">{l.platform ?? '未设置平台'}</Badge>
                         <Badge tone="blue">{l.type}</Badge>
                         {paidOff && <Badge tone="emerald">已结清</Badge>}
                       </div>
                       {!paidOff && (
-                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                          <IconCalendar className="h-3.5 w-3.5" />
+                        <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                          <IconCalendar className="h-3.5 w-3.5 shrink-0" />
                           每月 {l.repaymentDay} 号还款
                           {dueSoon && (
                             <span className="font-medium text-warning">
@@ -218,7 +220,7 @@ export function Loans() {
                         </p>
                       )}
                     </div>
-                    <div className="flex">
+                    <div className="flex shrink-0">
                       <button
                         onClick={() => openEdit(l)}
                         className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -236,16 +238,16 @@ export function Loans() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-y-3 text-sm">
-                    <div>
+                  <div className="mt-4 grid grid-cols-1 gap-3 text-sm min-[400px]:grid-cols-2">
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">剩余本金</p>
-                      <p className="font-semibold text-foreground">
+                      <p className="break-words font-semibold text-foreground [overflow-wrap:anywhere]">
                         {formatCurrency(l.remainingPrincipal, cur)}
                       </p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">月供</p>
-                      <p className="font-semibold text-foreground">
+                      <p className="break-words font-semibold text-foreground [overflow-wrap:anywhere]">
                         {formatCurrency(l.monthlyPayment, cur)}
                       </p>
                     </div>

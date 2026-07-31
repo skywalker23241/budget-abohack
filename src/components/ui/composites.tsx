@@ -19,7 +19,7 @@ export function Card({
   padding?: boolean;
 }) {
   return (
-    <CardPrimitive className={cn(padding && 'p-5', className)}>
+    <CardPrimitive className={cn('min-w-0', padding && 'p-5', className)}>
       {children}
     </CardPrimitive>
   );
@@ -36,14 +36,14 @@ export function SectionTitle({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-3">
-      <div>
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+    <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h2 className="break-words text-base font-semibold text-foreground">{title}</h2>
         {subtitle && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+          <p className="mt-0.5 break-words text-sm text-muted-foreground">{subtitle}</p>
         )}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
@@ -78,23 +78,30 @@ export function StatCard({
     warning: 'bg-warning/10 text-warning',
     brand: 'bg-secondary text-secondary-foreground',
   };
+  const surfaceTone: Record<Tone, string> = {
+    default: 'bg-card',
+    income: 'bg-gradient-to-br from-card to-success/[0.035]',
+    expense: 'bg-gradient-to-br from-card to-destructive/[0.035]',
+    warning: 'bg-gradient-to-br from-card to-warning/[0.045]',
+    brand: 'bg-gradient-to-br from-card to-foreground/[0.025]',
+  };
   return (
-    <CardPrimitive className="app-enter p-4 sm:p-5">
-      <div className="flex items-start justify-between">
-        <p className="text-sm text-muted-foreground">{label}</p>
+    <CardPrimitive className={cn('app-enter min-w-0 overflow-hidden p-4 sm:p-5', surfaceTone[tone])}>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <p className="min-w-0 break-words text-sm text-muted-foreground">{label}</p>
         {icon && (
-          <span className={cn('rounded-lg p-1.5', iconTone[tone])}>{icon}</span>
+          <span className={cn('shrink-0 rounded-lg p-1.5', iconTone[tone])}>{icon}</span>
         )}
       </div>
       <p
         className={cn(
-          'mt-2 text-2xl font-semibold tracking-tight',
+          'mt-3 min-w-0 break-words text-xl font-semibold tracking-[-0.025em] [overflow-wrap:anywhere] sm:text-2xl',
           valueTone[tone],
         )}
       >
         {value}
       </p>
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-1.5 break-words text-xs text-muted-foreground">{hint}</p>}
     </CardPrimitive>
   );
 }
@@ -150,7 +157,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1 rounded-full border border-transparent px-2.5 py-1 text-[11px] font-medium',
         tones[tone],
       )}
     >
@@ -180,7 +187,7 @@ export function EmptyState({
       )}
       <p className="text-sm font-medium text-foreground">{title}</p>
       {description && (
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+        <p className="mt-1 max-w-sm break-words text-sm text-muted-foreground">
           {description}
         </p>
       )}

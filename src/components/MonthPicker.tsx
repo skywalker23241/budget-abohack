@@ -19,27 +19,27 @@ export function MonthPicker({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1 rounded-lg border bg-card p-1',
+        'inline-flex items-center gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm',
         className,
       )}
     >
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 rounded-lg"
         onClick={() => onChange(prevMonth(month))}
         aria-label="上个月"
       >
         <IconChevronLeft className="h-4 w-4" />
       </Button>
-      <span className="flex min-w-[6.5rem] items-center justify-center gap-1.5 text-sm font-medium text-foreground">
+      <span className="flex min-w-[6rem] items-center justify-center gap-1.5 px-1 text-sm font-medium text-foreground">
         <IconCalendar className="h-4 w-4 text-muted-foreground" />
         {formatMonthLabel(month)}
       </span>
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 rounded-lg"
         onClick={() => onChange(nextMonth(month))}
         aria-label="下个月"
         disabled={isCurrent}

@@ -7,7 +7,7 @@
  */
 import { useRef, useState, type ReactNode } from 'react';
 import { OTPInput, REGEXP_ONLY_DIGITS, type SlotProps } from 'input-otp';
-import { LockKeyhole } from 'lucide-react';
+import { LockKeyhole } from '@/components/Icons';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,

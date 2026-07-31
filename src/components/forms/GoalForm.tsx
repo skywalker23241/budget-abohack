@@ -9,6 +9,7 @@ import { useStore } from '@/store/useStore';
 import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
 import { Field, SelectField } from './fields';
+import { DatePicker } from '@/components/DatePicker';
 
 interface Props {
   initial?: FinancialGoal;
@@ -74,7 +75,7 @@ export function GoalForm({ initial, onClose }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="目标名称" required error={errors.name}>
           <Input
             placeholder="如：应急储备金"
@@ -91,7 +92,7 @@ export function GoalForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="目标金额" required error={errors.targetAmount}>
           <Input
             type="number"
@@ -114,12 +115,12 @@ export function GoalForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="截止日期" required error={errors.deadline}>
-          <Input
-            type="date"
+          <DatePicker
             value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
+            onChange={setDeadline}
+            aria-invalid={Boolean(errors.deadline)}
           />
         </Field>
         <Field label="每月计划投入" error={errors.monthlyPlan}>

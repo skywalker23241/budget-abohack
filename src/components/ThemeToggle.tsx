@@ -2,7 +2,7 @@
  * 主题切换控件。ThemeToggle：紧凑循环按钮（浅 → 深 → 系统）；
  * ThemeSegmented：设置页用的分段选择。
  */
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor } from '@/components/Icons';
 import { useTheme, type Theme } from './theme-provider';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,7 @@ export function ThemeToggle({ className }: { className?: string }) {
 export function ThemeSegmented() {
   const { theme, setTheme } = useTheme();
   return (
-    <div className="inline-flex rounded-lg border p-1">
+    <div className="grid w-full grid-cols-3 rounded-xl border border-border/70 bg-muted/35 p-1">
       {OPTIONS.map(({ value, label, Icon }) => {
         const active = theme === value;
         return (
@@ -45,7 +45,7 @@ export function ThemeSegmented() {
             type="button"
             onClick={() => setTheme(value)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              'inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-medium transition-colors sm:text-sm',
               active
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',

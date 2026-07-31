@@ -1,7 +1,7 @@
 /**
  * 首页仪表盘：核心财务数据、图表、最近记录、提醒、健康评分。
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import {
@@ -16,6 +16,7 @@ import {
   budgetsWithUsage,
   healthScore,
   transactionsInMonth,
+  goalProgress,
 } from '@/lib/calculations';
 import { generateReminders } from '@/lib/reminders';
 import {
@@ -25,25 +26,25 @@ import {
   lastNDays,
   monthOf,
   todayStr,
+  formatMonthLabel,
 } from '@/lib/format';
 import { TRANSACTION_TYPE_LABELS } from '@/lib/constants';
 import { PageHeader } from '@/components/PageHeader';
 import { MonthPicker } from '@/components/MonthPicker';
-import { StatCard, Card, SectionTitle, Badge, Button, ProgressBar } from '@/components/ui';
+import { Card, SectionTitle, Badge, Button, ProgressBar } from '@/components/ui';
 import { CategoryDonut, IncomeExpenseTrend } from '@/components/charts';
 import { ReminderList } from '@/components/ReminderList';
 import { QuickTransactionModal } from '@/components/QuickTransactionModal';
-import { MobileCollapsibleSection } from '@/components/MobileCollapsibleSection';
 import { cn } from '@/lib/utils';
 import {
   IconPlus,
   IconArrowUp,
   IconArrowDown,
   IconWallet,
-  IconPiggy,
   IconBank,
-  IconChart,
-  IconHeart,
+  IconTarget,
+  IconReceipt,
+  IconChevronRight,
 } from '@/components/Icons';
 
 /** 健康评分环形图 */
@@ -88,6 +89,106 @@ function daysRemainingInMonth(month: string): number {
   return Math.max(1, totalDays - today.getDate() + 1);
 }
 
+function MetricRing({
+  value,
+  label,
+  tone = 'success',
+}: {
+  value: number;
+  label: string;
+  tone?: 'success' | 'warning' | 'danger';
+}) {
+  const radius = 34;
+  const circumference = 2 * Math.PI * radius;
+  const normalized = Math.min(1, Math.max(0, value));
+  const toneClass = {
+    success: 'stroke-emerald-400',
+    warning: 'stroke-amber-400',
+    danger: 'stroke-rose-400',
+  }[tone];
+
+  return (
+    <div className="relative h-24 w-24 shrink-0">
+      <svg className="h-24 w-24 -rotate-90" viewBox="0 0 80 80" aria-hidden="true">
+        <circle cx="40" cy="40" r={radius} fill="none" className="stroke-white/10" strokeWidth="7" />
+        <circle
+          cx="40"
+          cy="40"
+          r={radius}
+          fill="none"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - normalized)}
+          className={cn('transition-all duration-700', toneClass)}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-lg font-semibold text-white">{Math.round(value * 100)}%</span>
+        <span className="text-[10px] text-zinc-400">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+function OverviewMetric({
+  label,
+  value,
+  tone = 'default',
+  icon,
+}: {
+  label: string;
+  value: string;
+  tone?: 'default' | 'income' | 'expense';
+  icon: ReactNode;
+}) {
+  return (
+    <div className="group min-w-0 rounded-xl border border-white/8 bg-white/[0.045] p-3.5 transition-colors hover:bg-white/[0.075]">
+      <div className="flex items-center gap-2 text-xs text-zinc-400">
+        <span className="text-zinc-500">{icon}</span>
+        {label}
+      </div>
+      <p
+        className={cn(
+          'mt-2 break-words text-lg font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-xl',
+          tone === 'income' && 'text-emerald-300',
+          tone === 'expense' && 'text-rose-300',
+          tone === 'default' && 'text-white',
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function DashboardSectionHeading({
+  eyebrow,
+  title,
+  description,
+  action,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {eyebrow}
+        </p>
+        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          {title}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
+}
+
 export function Dashboard() {
   const [month, setMonth] = useState(currentMonth());
   const [showAdd, setShowAdd] = useState(false);
@@ -121,6 +222,14 @@ export function Dashboard() {
       .reduce((s, t) => s + t.amount, 0);
     const loanRatio = loanToIncomeRatio(loans, income);
     const large = findLargeExpenses(transactions, month, settings.largeExpenseThreshold);
+    const goalTarget = goals.reduce((sum, goal) => sum + goal.targetAmount, 0);
+    const goalSaved = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+    const goalRate =
+      goalTarget > 0
+        ? Math.min(1, goalSaved / goalTarget)
+        : goals.length > 0
+          ? goals.reduce((sum, goal) => sum + goalProgress(goal), 0) / goals.length
+          : 0;
 
     const pieData = expenseByCategory(transactions, month).map((e) => ({
       name: e.category,
@@ -173,6 +282,9 @@ export function Dashboard() {
       dailyAvailable,
       loanRemaining,
       monthRepayment,
+      goalTarget,
+      goalSaved,
+      goalRate,
       pieData,
       trend,
       recent,
@@ -183,16 +295,41 @@ export function Dashboard() {
   }, [transactions, budgets, loans, goals, settings, month, warnRate]);
 
   const isCurrentMonth = month === monthOf(todayStr());
+  const primaryAmount =
+    data.bSummary.total > 0 ? Math.max(0, data.bSummary.remaining) : data.balance;
+  const budgetTone =
+    data.bSummary.usageRate >= 1
+      ? 'danger'
+      : data.bSummary.usageRate >= warnRate
+        ? 'warning'
+        : 'success';
+  const savingsOnTrack = data.rate >= settings.savingsRateTarget / 100;
+  const statusSummary =
+    data.bSummary.total <= 0
+      ? '建立预算后，可以得到更准确的每日可花额度。'
+      : data.bSummary.remaining < 0
+        ? '本月预算已超支，建议优先复盘高支出分类。'
+        : data.budgetWatch.length > 0
+          ? data.budgetWatch[0].status === 'exceeded'
+            ? `${data.budgetWatch[0].category} 已经超出预算，建议检查相关支出。`
+            : `${data.budgetWatch[0].category} 接近预算上限，需要留意接下来的消费。`
+          : savingsOnTrack
+            ? '预算节奏稳定，储蓄目标也在计划内。'
+            : '预算执行平稳，储蓄率距离目标还有提升空间。';
 
   return (
     <>
       <PageHeader
-        title="仪表盘"
-        subtitle="一眼掌握你的财务状况"
+        title="财务总览"
+        subtitle={`${formatMonthLabel(month)} · 收支、预算与长期目标`}
         actions={
           <>
             <MonthPicker month={month} onChange={setMonth} />
-            <Button onClick={() => setShowAdd(true)}>
+            <Button
+              data-tour="quick-add"
+              className="shadow-sm"
+              onClick={() => setShowAdd(true)}
+            >
               <IconPlus className="h-4 w-4" />
               记一笔
             </Button>
@@ -200,304 +337,437 @@ export function Dashboard() {
         }
       />
 
-      <Card className="mb-4 overflow-hidden bg-foreground text-background">
-        <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-end">
-          <div>
-            <p className="text-sm text-background/65">
-              {isCurrentMonth ? '本月还可支配' : `${month} 预算回看`}
+      {/* 第一层：核心财务结论 */}
+      <section className="relative isolate overflow-hidden rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-5 text-white shadow-[0_24px_70px_-38px_rgba(9,9,11,0.75)] sm:p-7 lg:p-8">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10 opacity-90"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(circle at 12% 0%, rgba(52,211,153,.16), transparent 32%), radial-gradient(circle at 92% 100%, rgba(99,102,241,.13), transparent 35%)',
+          }}
+        />
+
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,.12)]" />
+            {isCurrentMonth ? '数据已同步至本月' : '历史月份回看'}
+          </div>
+          <span
+            className={cn(
+              'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
+              data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
+                ? 'border-rose-400/25 bg-rose-400/10 text-rose-200'
+                : savingsOnTrack
+                  ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
+                  : 'border-amber-400/25 bg-amber-400/10 text-amber-200',
+            )}
+          >
+            {data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
+              ? '需要关注'
+              : savingsOnTrack
+                ? '财务状态良好'
+                : '保持节奏'}
+          </span>
+        </div>
+
+        <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)] xl:items-end">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-zinc-400">
+              {data.bSummary.total > 0 ? '本月还可支配' : '本月结余'}
             </p>
-            <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
-              <p className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                {formatCurrency(Math.max(0, data.bSummary.remaining), cur)}
-              </p>
-              <p className="pb-1 text-sm text-background/70">
-                {data.bSummary.total > 0
-                  ? `日均可花 ${formatCurrency(data.dailyAvailable, cur)}`
-                  : '还没有设置本月预算'}
-              </p>
+            <p className="mt-2 break-words text-[2.65rem] font-semibold leading-none tracking-[-0.045em] text-white [overflow-wrap:anywhere] sm:text-6xl">
+              {formatCurrency(primaryAmount, cur)}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="text-sm text-zinc-400">{statusSummary}</span>
+              {data.bSummary.total > 0 && (
+                <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-zinc-300">
+                  日均可花 {formatCurrency(data.dailyAvailable, cur)}
+                </span>
+              )}
             </div>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-background/70">
-              {data.bSummary.total <= 0
-                ? '先给常用分类设置预算，首页就能给出每日可花额度和风险提醒。'
-                : data.bSummary.remaining < 0
-                  ? '本月预算已经超支，建议先暂停非必要消费，并复盘超支分类。'
-                  : data.budgetWatch.length > 0
-                    ? `${data.budgetWatch[0].category} 已接近预算上限，今天记账时可以优先关注这类支出。`
-                    : '预算执行平稳，可以按当前节奏继续消费。'}
-            </p>
+
+            <div className="mt-8 grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-3">
+              <OverviewMetric
+                label="本月收入"
+                value={formatCurrency(data.income, cur)}
+                tone="income"
+                icon={<IconArrowUp className="h-3.5 w-3.5" />}
+              />
+              <OverviewMetric
+                label="本月支出"
+                value={formatCurrency(data.expense, cur)}
+                tone="expense"
+                icon={<IconArrowDown className="h-3.5 w-3.5" />}
+              />
+              <OverviewMetric
+                label="本月结余"
+                value={formatCurrency(data.balance, cur)}
+                tone={data.balance < 0 ? 'expense' : 'default'}
+                icon={<IconWallet className="h-3.5 w-3.5" />}
+              />
+            </div>
           </div>
 
-          <div className="rounded-md border border-white/10 bg-white/8 p-4">
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="text-background/70">预算使用率</span>
-              <span className="font-semibold text-background">
-                {formatPercent(data.bSummary.usageRate)}
-              </span>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-5">
+              <MetricRing
+                value={data.bSummary.usageRate}
+                label="预算使用"
+                tone={budgetTone}
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+                  Spending pace
+                </p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {data.bSummary.usageRate >= 1
+                    ? '预算已经超额'
+                    : data.bSummary.usageRate >= warnRate
+                      ? '接近预算上限'
+                      : '消费节奏健康'}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">
+                  已使用 {formatCurrency(data.bSummary.used, cur)}
+                  <br />
+                  总预算 {formatCurrency(data.bSummary.total, cur)}
+                </p>
+              </div>
             </div>
-            <ProgressBar
-              value={data.bSummary.usageRate}
-              tone={
-                data.bSummary.usageRate >= 1
-                  ? 'rose'
-                  : data.bSummary.usageRate >= warnRate
-                    ? 'amber'
-                    : 'emerald'
+
+            <div className="mt-5 border-t border-white/10 pt-4">
+              <div className="mb-2 flex items-center justify-between text-xs">
+                <span className="text-zinc-400">储蓄率</span>
+                <span className={savingsOnTrack ? 'text-emerald-300' : 'text-amber-300'}>
+                  {formatPercent(data.rate)} / 目标 {settings.savingsRateTarget}%
+                </span>
+              </div>
+              <ProgressBar
+                value={
+                  settings.savingsRateTarget > 0
+                    ? data.rate / (settings.savingsRateTarget / 100)
+                    : data.rate
+                }
+                tone={savingsOnTrack ? 'emerald' : 'amber'}
+                className="h-1.5 bg-white/10"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 第二层：现金流与支出结构 */}
+      <section className="mt-9">
+        <DashboardSectionHeading
+          eyebrow="Cash flow"
+          title="现金流与支出结构"
+          description="先看趋势，再定位本月钱主要花在了哪里。"
+          action={
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/app/reports">
+                查看完整报表
+                <IconChevronRight />
+              </Link>
+            </Button>
+          }
+        />
+
+        <div className="grid min-w-0 gap-4 lg:grid-cols-12">
+          <Card className="rounded-2xl border-border/70 p-5 shadow-[0_12px_35px_-28px_rgba(15,23,42,.45)] sm:p-6 lg:col-span-8">
+            <SectionTitle
+              title="最近 7 天收支趋势"
+              subtitle="观察短期现金流变化，识别异常波动"
+              action={
+                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                  近 7 天
+                </span>
               }
-              className="bg-white/15"
             />
+            <IncomeExpenseTrend data={data.trend} currency={cur} height={286} />
+          </Card>
+
+          <Card className="rounded-2xl border-border/70 p-5 shadow-[0_12px_35px_-28px_rgba(15,23,42,.45)] sm:p-6 lg:col-span-4">
+            <SectionTitle
+              title="支出结构"
+              subtitle={data.expense > 0 ? `本月支出 ${formatCurrency(data.expense, cur)}` : '本月暂无支出'}
+            />
+            <CategoryDonut data={data.pieData} currency={cur} height={230} />
+            {data.pieData.length > 0 && (
+              <div className="mt-2 space-y-3 border-t pt-4">
+                {data.pieData.slice(0, 3).map((item) => {
+                  const ratio = data.expense > 0 ? item.value / data.expense : 0;
+                  return (
+                    <div key={item.name}>
+                      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                        <span className="truncate text-muted-foreground">{item.name}</span>
+                        <span className="shrink-0 font-medium text-foreground">
+                          {formatPercent(ratio)}
+                        </span>
+                      </div>
+                      <div className="h-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-foreground/65"
+                          style={{ width: `${Math.min(100, ratio * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
+      </section>
+
+      {/* 第三层：预算、贷款、目标专题 */}
+      <section className="mt-9">
+        <DashboardSectionHeading
+          eyebrow="Planning"
+          title="计划与长期责任"
+          description="把预算、债务和储蓄目标放在同一个决策视图中。"
+        />
+
+        <div className="grid min-w-0 gap-4 lg:grid-cols-12">
+          <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-5">
+            <SectionTitle
+              title="预算概览"
+              subtitle={`${formatPercent(data.bSummary.usageRate)} 已使用`}
+              action={
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/app/budget">管理预算</Link>
+                </Button>
+              }
+            />
+            <div className="rounded-xl bg-muted/55 p-4">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">剩余预算</p>
+                  <p className="mt-1 break-words text-2xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
+                    {formatCurrency(data.bSummary.remaining, cur)}
+                  </p>
+                </div>
+                <Badge tone={budgetTone === 'danger' ? 'rose' : budgetTone === 'warning' ? 'amber' : 'emerald'}>
+                  {budgetTone === 'danger' ? '已超支' : budgetTone === 'warning' ? '需留意' : '节奏良好'}
+                </Badge>
+              </div>
+              <ProgressBar
+                value={data.bSummary.usageRate}
+                tone={budgetTone === 'danger' ? 'rose' : budgetTone === 'warning' ? 'amber' : 'emerald'}
+                className="mt-4 h-1.5"
+              />
+            </div>
+
             <div className="mt-4 space-y-2">
               {data.budgetWatch.length > 0 ? (
                 data.budgetWatch.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-xs">
-                    <span className="text-background/70">{item.category}</span>
-                    <span className="font-medium text-background">
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/60"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{item.category}</p>
+                      <p className="text-xs text-muted-foreground">
+                        已用 {formatCurrency(item.used, cur)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-warning">
                       {formatPercent(item.usageRate)}
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-background/65">暂无超支或预警分类</p>
+                <div className="rounded-xl border border-dashed px-4 py-5 text-center text-sm text-muted-foreground">
+                  当前没有超支或预警分类
+                </div>
               )}
             </div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="mb-4 grid grid-cols-2 gap-3 md:hidden">
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">本月收入</p>
-          <p className="mt-1 text-xl font-semibold text-success">
-            {formatCurrency(data.income, cur)}
-          </p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">本月支出</p>
-          <p className="mt-1 text-xl font-semibold text-destructive">
-            {formatCurrency(data.expense, cur)}
-          </p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">本月结余</p>
-          <p
-            className={cn(
-              'mt-1 text-xl font-semibold',
-              data.balance >= 0 ? 'text-foreground' : 'text-destructive',
-            )}
-          >
-            {formatCurrency(data.balance, cur)}
-          </p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">储蓄率</p>
-          <p
-            className={cn(
-              'mt-1 text-xl font-semibold',
-              data.rate >= settings.savingsRateTarget / 100
-                ? 'text-success'
-                : 'text-warning',
-            )}
-          >
-            {formatPercent(data.rate)}
-          </p>
-        </Card>
-      </div>
-
-      {/* 核心数据卡片 */}
-      <div className="hidden grid-cols-2 gap-3 sm:gap-4 md:grid lg:grid-cols-4">
-        <StatCard
-          label="本月总收入"
-          value={formatCurrency(data.income, cur)}
-          tone="income"
-          icon={<IconArrowUp className="h-4 w-4" />}
-        />
-        <StatCard
-          label="本月总支出"
-          value={formatCurrency(data.expense, cur)}
-          tone="expense"
-          icon={<IconArrowDown className="h-4 w-4" />}
-        />
-        <StatCard
-          label="本月结余"
-          value={formatCurrency(data.balance, cur)}
-          tone={data.balance >= 0 ? 'brand' : 'expense'}
-          hint={data.balance >= 0 ? '收支为正' : '支出超过收入'}
-          icon={<IconWallet className="h-4 w-4" />}
-        />
-        <StatCard
-          label="储蓄率"
-          value={formatPercent(data.rate)}
-          tone={data.rate >= settings.savingsRateTarget / 100 ? 'income' : 'warning'}
-          hint={`目标 ${settings.savingsRateTarget}%`}
-          icon={<IconPiggy className="h-4 w-4" />}
-        />
-        <StatCard
-          label="本月预算剩余"
-          value={formatCurrency(data.bSummary.remaining, cur)}
-          tone={data.bSummary.remaining >= 0 ? 'default' : 'expense'}
-          hint={`总预算 ${formatCurrency(data.bSummary.total, cur)}`}
-          icon={<IconWallet className="h-4 w-4" />}
-        />
-        <StatCard
-          label="预算使用率"
-          value={formatPercent(data.bSummary.usageRate)}
-          tone={data.bSummary.usageRate >= 1 ? 'expense' : data.bSummary.usageRate >= warnRate ? 'warning' : 'default'}
-          icon={<IconChart className="h-4 w-4" />}
-        />
-        <StatCard
-          label="贷款待还总额"
-          value={formatCurrency(data.loanRemaining, cur)}
-          tone="default"
-          icon={<IconBank className="h-4 w-4" />}
-        />
-        <StatCard
-          label="本月还款金额"
-          value={formatCurrency(data.monthRepayment, cur)}
-          tone="default"
-          icon={<IconBank className="h-4 w-4" />}
-        />
-      </div>
-
-      {/* 最近记录 */}
-      <Card className="mt-4">
-        <SectionTitle
-          title="最近记录"
-          subtitle={isCurrentMonth ? '最新收支' : '最新收支（不限月份）'}
-        />
-        {data.recent.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            还没有记录，点击右上角「记一笔」开始吧
-          </p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {data.recent.map((t, index) => {
-              const isIncome = t.type === 'income';
-              return (
-                <li
-                  key={t.id}
-                  className={cn(
-                    'flex items-center gap-3 py-2.5',
-                    index >= 5 && 'hidden md:flex',
-                  )}
-                >
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                      isIncome ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                    }`}
-                  >
-                    {isIncome ? (
-                      <IconArrowUp className="h-4 w-4" />
-                    ) : (
-                      <IconArrowDown className="h-4 w-4" />
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {t.category}
-                      {t.note && <span className="text-muted-foreground"> · {t.note}</span>}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t.date} · {TRANSACTION_TYPE_LABELS[t.type]} · {t.paymentMethod}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 text-sm font-semibold ${
-                      isIncome ? 'text-success' : 'text-foreground'
-                    }`}
-                  >
-                    {isIncome ? '+' : '-'}
-                    {formatCurrency(t.amount, cur)}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {data.recent.length > 5 && (
-          <Button variant="outline" className="mt-3 w-full md:hidden" asChild>
-            <Link to="/app/transactions">查看更多账单</Link>
-          </Button>
-        )}
-      </Card>
-
-      {/* 图表区 */}
-      <MobileCollapsibleSection
-        className="mt-4"
-        title="统计详情"
-        subtitle="趋势、分类和完整数据"
-      >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <SectionTitle title="最近 7 天收支趋势" />
-            <IncomeExpenseTrend data={data.trend} currency={cur} />
           </Card>
-          <Card>
-            <SectionTitle title="本月支出分类" />
-            <CategoryDonut data={data.pieData} currency={cur} />
-          </Card>
-        </div>
-      </MobileCollapsibleSection>
 
-      {/* 健康评分 + 提醒 */}
-      <MobileCollapsibleSection
-        className="mt-4"
-        title="财务提醒"
-        subtitle={`健康评分 ${data.health.score}，预算/还款提醒按需查看`}
-      >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card>
-            <SectionTitle title="财务健康评分" />
-            <div className="flex items-center gap-4">
-              <ScoreRing score={data.health.score} />
-              <div className="min-w-0 flex-1">
-                <Badge
-                  tone={
-                    data.health.grade === '优秀'
-                      ? 'emerald'
-                      : data.health.grade === '良好'
-                        ? 'brand'
-                        : data.health.grade === '一般'
-                          ? 'amber'
-                          : 'rose'
-                  }
-                >
-                  <IconHeart className="h-3 w-3" />
-                  {data.health.grade}
-                </Badge>
-                <ul className="mt-3 space-y-1.5">
-                  {data.health.factors.map((f) => (
-                    <li key={f.label} className="flex items-center gap-2 text-xs">
-                      <span
-                        className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          f.ok ? 'bg-success' : 'bg-destructive'
-                        }`}
-                      />
-                      <span className="text-muted-foreground">{f.label}</span>
-                    </li>
-                  ))}
-                </ul>
+          <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-3">
+            <div className="flex items-center justify-between">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 text-info">
+                <IconBank className="h-5 w-5" weight="duotone" />
+              </span>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/app/loans">详情</Link>
+              </Button>
+            </div>
+            <p className="mt-5 text-sm text-muted-foreground">贷款待还总额</p>
+            <p className="mt-1 break-words text-2xl font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">
+              {formatCurrency(data.loanRemaining, cur)}
+            </p>
+            <div className="mt-5 space-y-3 border-t pt-4 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">本月已还</span>
+                <span className="font-medium text-foreground">
+                  {formatCurrency(data.monthRepayment, cur)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">还款收入比</span>
+                <span className={data.income > 0 && data.monthRepayment / data.income > 0.35 ? 'font-medium text-warning' : 'font-medium text-foreground'}>
+                  {data.income > 0 ? formatPercent(data.monthRepayment / data.income) : '待记录收入'}
+                </span>
               </div>
             </div>
           </Card>
 
-          <Card>
-            <SectionTitle title="超预算提醒" />
+          <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-4">
+            <div className="flex items-center justify-between">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
+                <IconTarget className="h-5 w-5" weight="duotone" />
+              </span>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/app/goals">管理目标</Link>
+              </Button>
+            </div>
+            <div className="mt-5 flex items-end justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground">目标累计进度</p>
+                <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
+                  {formatPercent(data.goalRate)}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">{goals.length} 个目标</span>
+            </div>
+            <ProgressBar value={data.goalRate} tone="emerald" className="mt-4 h-1.5" />
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-muted/55 p-3">
+                <p className="text-xs text-muted-foreground">已积累</p>
+                <p className="mt-1 break-words text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                  {formatCurrency(data.goalSaved, cur)}
+                </p>
+              </div>
+              <div className="rounded-xl bg-muted/55 p-3">
+                <p className="text-xs text-muted-foreground">目标总额</p>
+                <p className="mt-1 break-words text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                  {formatCurrency(data.goalTarget, cur)}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* 财务健康与提醒作为一个整体，而非三张同质卡片 */}
+      <section className="mt-4 overflow-hidden rounded-2xl border border-border/70 bg-muted/25">
+        <div className="grid lg:grid-cols-[0.8fr_1.1fr_1.1fr]">
+          <div className="flex items-center gap-4 p-5 sm:p-6">
+            <ScoreRing score={data.health.score} />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                财务健康
+              </p>
+              <p className="mt-1 text-lg font-semibold text-foreground">{data.health.grade}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                综合储蓄、预算、债务和大额支出评估
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-border/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
+            <SectionTitle title="预算提醒" />
             <ReminderList
               reminders={data.budgetReminders}
               emptyText="预算执行良好，暂无超支"
-              max={4}
+              max={3}
             />
-          </Card>
-
-          <Card>
-            <SectionTitle title="贷款还款提醒" />
+          </div>
+          <div className="border-t border-border/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
+            <SectionTitle title="还款提醒" />
             <ReminderList
               reminders={data.loanReminders}
               emptyText="近期没有待还款提醒"
-              max={4}
+              max={3}
             />
-          </Card>
+          </div>
         </div>
-      </MobileCollapsibleSection>
+      </section>
+
+      {/* 第四层：最近动态 */}
+      <section className="mt-9">
+        <DashboardSectionHeading
+          eyebrow="Activity"
+          title="最近动态"
+          description={isCurrentMonth ? '最新的收支记录与支付信息。' : '最新收支记录，不限于当前查看月份。'}
+          action={
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/app/transactions">
+                全部账单
+                <IconChevronRight />
+              </Link>
+            </Button>
+          }
+        />
+
+        <Card padding={false} className="overflow-hidden rounded-2xl border-border/70">
+          {data.recent.length === 0 ? (
+            <div className="flex flex-col items-center px-6 py-14 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                <IconReceipt className="h-6 w-6" weight="duotone" />
+              </span>
+              <p className="mt-4 text-sm font-medium text-foreground">还没有收支记录</p>
+              <p className="mt-1 text-sm text-muted-foreground">点击右上角「记一笔」开始记录</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border/70">
+              {data.recent.map((t, index) => {
+                const isIncome = t.type === 'income';
+                return (
+                  <li
+                    key={t.id}
+                    className={cn(
+                      'group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/45 sm:px-5',
+                      index >= 6 && 'hidden md:flex',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+                        isIncome
+                          ? 'bg-success/10 text-success'
+                          : 'bg-muted text-muted-foreground group-hover:bg-destructive/10 group-hover:text-destructive',
+                      )}
+                    >
+                      {isIncome ? (
+                        <IconArrowUp className="h-4 w-4" />
+                      ) : (
+                        <IconArrowDown className="h-4 w-4" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <p className="max-w-full truncate text-sm font-medium text-foreground">
+                          {t.category}
+                          {t.note && <span className="text-muted-foreground"> · {t.note}</span>}
+                        </p>
+                        <Badge tone="slate">{TRANSACTION_TYPE_LABELS[t.type]}</Badge>
+                      </div>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                        {t.date} · {t.paymentMethod}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p
+                        className={cn(
+                          'text-sm font-semibold tabular-nums sm:text-base',
+                          isIncome ? 'text-success' : 'text-foreground',
+                        )}
+                      >
+                        {isIncome ? '+' : '-'}
+                        {formatCurrency(t.amount, cur)}
+                      </p>
+                      <p className="mt-0.5 hidden text-[11px] text-muted-foreground sm:block">
+                        {isIncome ? '已入账' : '已支出'}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+      </section>
 
       <QuickTransactionModal open={showAdd} onClose={() => setShowAdd(false)} />
     </>

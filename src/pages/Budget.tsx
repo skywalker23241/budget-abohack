@@ -109,7 +109,7 @@ export function BudgetPage() {
               <IconDownload className="h-4 w-4" />
               复制上月
             </Button>
-            <Button onClick={openAdd}>
+            <Button data-tour="budget-add" onClick={openAdd}>
               <IconPlus className="h-4 w-4" />
               新增预算
             </Button>
@@ -182,9 +182,9 @@ export function BudgetPage() {
       {/* 总进度 */}
       {summary.total > 0 && (
         <Card className="mt-4">
-          <div className="mb-2 flex items-center justify-between text-sm">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
             <span className="font-medium text-foreground">总预算执行进度</span>
-            <span className="text-muted-foreground">
+            <span className="break-words text-muted-foreground [overflow-wrap:anywhere]">
               {formatCurrency(summary.used, cur)} / {formatCurrency(summary.total, cur)}
             </span>
           </div>
@@ -234,18 +234,20 @@ export function BudgetPage() {
                       'hidden md:block',
                   )}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">{b.category}</span>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="min-w-0 break-words font-medium text-foreground">
+                          {b.category}
+                        </span>
                         <Badge tone={meta.tone}>{meta.label}</Badge>
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                         已用 {formatCurrency(b.used, cur)} / 预算{' '}
                         {formatCurrency(b.amount, cur)}
                       </p>
                     </div>
-                    <div className="flex">
+                    <div className="flex shrink-0">
                       <button
                         onClick={() => openEdit(b)}
                         className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"

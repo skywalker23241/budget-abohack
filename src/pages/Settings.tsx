@@ -1,7 +1,7 @@
 /**
  * 设置页面：偏好设置 + 数据管理（导出/导入 JSON、导出 CSV、清空、载入示例）。
  */
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ChevronRight,
   Cloud,
@@ -9,7 +9,7 @@ import {
   Save,
   ShieldCheck,
   Unplug,
-} from 'lucide-react';
+} from '@/components/Icons';
 import type { AppData } from '@/types';
 import { useStore } from '@/store/useStore';
 import { todayStr } from '@/lib/format';
@@ -39,8 +39,10 @@ import { ThemeSegmented } from '@/components/ThemeToggle';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { useSecurityConfirm } from '@/components/SecurityConfirmDialog';
 import { useToast } from '@/components/Toast';
+import { openOnboardingGuide } from '@/components/OnboardingGuide';
 import {
   IconDownload,
+  IconHelp,
   IconUpload,
   IconTrash,
   IconReceipt,
@@ -108,7 +110,10 @@ function SettingActionRow({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="app-press group flex w-full items-center gap-3 py-3 text-left disabled:pointer-events-none disabled:opacity-50"
+      className={cn(
+        'app-press group flex w-full items-center gap-3 px-3 py-3.5 text-left transition-colors disabled:pointer-events-none disabled:opacity-50',
+        danger ? 'hover:bg-destructive/[0.045]' : 'hover:bg-muted/45',
+      )}
     >
       <span
         className={cn(
@@ -121,14 +126,14 @@ function SettingActionRow({
       <span className="min-w-0 flex-1">
         <span
           className={cn(
-            'block truncate text-sm font-medium text-foreground group-hover:text-foreground',
+            'block break-words text-sm font-medium text-foreground group-hover:text-foreground',
             danger && 'text-destructive',
           )}
         >
           {title}
         </span>
         {description && (
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+          <span className="mt-0.5 block break-words text-xs text-muted-foreground">
             {description}
           </span>
         )}
@@ -138,7 +143,29 @@ function SettingActionRow({
   );
 }
 
-export function Settings() {
+function SettingFieldRow({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="grid min-w-0 gap-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(0,1fr)_minmax(13rem,18rem)] md:items-center md:gap-8">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        {description && (
+          <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{description}</p>
+        )}
+      </div>
+      <div className="min-w-0 md:justify-self-stretch">{children}</div>
+    </div>
+  );
+}
+
+export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
   const settings = useStore((s) => s.settings);
   const updateSettings = useStore((s) => s.updateSettings);
   const exportData = useStore((s) => s.exportData);
@@ -158,6 +185,19 @@ export function Settings() {
   const [syncConfig, setSyncConfig] = useState<WebDavConfig>(() => loadWebDavConfig());
   const [syncMeta, setSyncMeta] = useState(() => loadWebDavSyncMeta());
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<
+    'preferences' | 'backup' | 'sync' | 'other'
+  >('preferences');
+
+  useEffect(() => {
+    if (!embedded) return;
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>('[data-tour="settings-panel"] .settings-scroll-pane:not(.hidden)')
+        ?.scrollTo({ top: 0, behavior: 'auto' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeSection, embedded]);
   const syncConfigured = Boolean(
     syncConfig.serverUrl && syncConfig.username && syncConfig.remotePath,
   );
@@ -441,50 +481,140 @@ export function Settings() {
   return (
     <>
       {securityConfirmDialog}
-      <PageHeader title="设置" subtitle="偏好设置与数据管理" />
+      {!embedded && (
+        <>
+          <PageHeader title="设置" subtitle="偏好设置与数据管理" />
+          <AppSummaryCard
+            eyebrow="设置中心"
+            title={syncConfigured ? '云同步配置' : '本地数据'}
+            value={syncConfigured ? syncResultLabel(syncMeta.lastResult) : `${totalLocalItems} 项`}
+            subtitle={
+              syncConfigured
+                ? `最近同步：${formatSyncTime(syncMeta.lastSyncAt)}。密码仅保存在当前浏览器。`
+                : '当前数据保存在本机浏览器，建议配置 WebDAV 或定期导出备份。'
+            }
+            accent={syncConfigured ? 'info' : 'warning'}
+            meta={[
+              { label: '记账记录', value: `${transactions.length} 笔` },
+              { label: '预算/目标', value: `${budgets.length + goals.length} 项` },
+              { label: '贷款/收入', value: `${loans.length + incomeSources.length} 项` },
+            ]}
+          />
+        </>
+      )}
 
-      <AppSummaryCard
-        eyebrow="设置中心"
-        title={syncConfigured ? '云同步配置' : '本地数据'}
-        value={syncConfigured ? syncResultLabel(syncMeta.lastResult) : `${totalLocalItems} 项`}
-        subtitle={
-          syncConfigured
-            ? `最近同步：${formatSyncTime(syncMeta.lastSyncAt)}。密码仅保存在当前浏览器。`
-            : '当前数据保存在本机浏览器，建议配置 WebDAV 或定期导出备份。'
-        }
-        accent={syncConfigured ? 'info' : 'warning'}
-        meta={[
-          { label: '记账记录', value: `${transactions.length} 笔` },
-          { label: '预算/目标', value: `${budgets.length + goals.length} 项` },
-          { label: '贷款/收入', value: `${loans.length + incomeSources.length} 项` },
-        ]}
-      />
+      <div
+        data-tour={embedded ? 'settings-panel' : undefined}
+        className={cn(
+          'grid min-w-0 grid-cols-1',
+          embedded
+            ? 'md:h-full md:min-h-0 md:grid-cols-[13rem_minmax(0,1fr)]'
+            : 'gap-4 lg:grid-cols-2',
+          !embedded && 'mt-4',
+        )}
+      >
+        {embedded && (
+          <aside className="border-b bg-muted/35 p-2 md:row-start-1 md:h-full md:min-h-0 md:overflow-hidden md:border-b-0 md:border-r md:p-4">
+            <p className="hidden px-3 pb-3 pt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/75 md:block">
+              设置分类
+            </p>
+            <nav className="grid grid-cols-4 gap-1 md:flex md:flex-col">
+              {[
+                {
+                  id: 'preferences' as const,
+                  title: '偏好设置',
+                  subtitle: '主题、币种与提醒',
+                  icon: IconSettings,
+                },
+                {
+                  id: 'backup' as const,
+                  title: '数据备份',
+                  subtitle: '导入与导出',
+                  icon: IconDownload,
+                },
+                {
+                  id: 'sync' as const,
+                  title: '云同步',
+                  subtitle: 'WebDAV 私有同步',
+                  icon: Cloud,
+                },
+                {
+                  id: 'other' as const,
+                  title: '其他操作',
+                  subtitle: '向导、示例与重置',
+                  icon: IconHelp,
+                },
+              ].map(({ id, title, subtitle, icon: SectionIcon }) => {
+                const active = activeSection === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setActiveSection(id)}
+                    className={cn(
+                      'app-press flex min-w-0 flex-col items-center gap-1 rounded-xl px-1.5 py-2.5 text-center md:w-full md:flex-row md:gap-3 md:px-3 md:py-3 md:text-left',
+                      active
+                        ? 'bg-foreground text-background shadow-sm [&_.settings-nav-subtitle]:text-background/60'
+                        : 'text-muted-foreground hover:bg-background/75 hover:text-foreground',
+                    )}
+                  >
+                    <SectionIcon
+                      className="h-5 w-5 shrink-0"
+                      weight={active ? 'fill' : 'regular'}
+                    />
+                    <span className="min-w-0">
+                      <span className="block whitespace-nowrap text-xs font-medium md:text-sm">
+                        {title}
+                      </span>
+                      <span className="settings-nav-subtitle mt-0.5 hidden truncate text-[11px] text-muted-foreground md:block">
+                        {subtitle}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+        )}
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* 偏好设置 */}
         <MobileCollapsibleSection
           title="偏好设置"
           subtitle="主题、币种和提醒阈值"
           defaultOpen
+          alwaysOpen={embedded}
+          className={cn(
+            embedded &&
+              'settings-scroll-pane p-4 sm:p-6 md:col-start-2 md:row-start-1 md:h-full md:min-h-0 md:overflow-y-auto md:overscroll-contain md:p-7',
+            embedded && activeSection !== 'preferences' && 'hidden',
+          )}
         >
-          <Card>
-            <SectionTitle title="偏好设置" />
-            <div className="space-y-4">
-              <Field label="外观主题" hint="浅色 / 深色 / 跟随系统">
+          <Card className="border-0 bg-transparent p-0 shadow-none">
+            <SectionTitle
+              title="偏好设置"
+              subtitle="调整界面、默认币种和财务提醒规则"
+              action={
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                  <IconSettings className="h-4 w-4" weight="duotone" />
+                </span>
+              }
+            />
+            <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_12px_35px_-30px_rgba(15,23,42,.3)]">
+              <SettingFieldRow title="外观主题" description="选择浅色、深色或跟随设备系统。">
                 <ThemeSegmented />
-              </Field>
+              </SettingFieldRow>
 
-              <Field label="默认币种">
+              <SettingFieldRow title="默认币种" description="用于所有金额、图表和导出数据的展示。">
                 <SelectField
                   value={settings.currency}
                   onChange={(v) => updateSettings({ currency: v })}
                   options={CURRENCIES.map((c) => ({ value: c.code, label: c.label }))}
                 />
-              </Field>
+              </SettingFieldRow>
 
-              <Field
-                label="月度储蓄率目标 (%)"
-                hint="储蓄率 = (收入 - 支出) / 收入"
+              <SettingFieldRow
+                title="月度储蓄率目标"
+                description="储蓄率 =（收入 - 支出）/ 收入，用于判断本月是否达标。"
               >
                 <Input
                   type="number"
@@ -497,9 +627,12 @@ export function Settings() {
                     })
                   }
                 />
-              </Field>
+              </SettingFieldRow>
 
-              <Field label="预算预警阈值 (%)" hint="使用率达到该比例时提醒，默认 80%">
+              <SettingFieldRow
+                title="预算预警阈值"
+                description="分类预算使用率达到该比例时发出提醒。"
+              >
                 <Input
                   type="number"
                   min="1"
@@ -511,9 +644,12 @@ export function Settings() {
                     })
                   }
                 />
-              </Field>
+              </SettingFieldRow>
 
-              <Field label="大额支出提醒阈值" hint="单笔支出超过该金额视为大额">
+              <SettingFieldRow
+                title="大额支出提醒"
+                description="单笔支出超过该金额时，在财务健康与提醒中重点显示。"
+              >
                 <Input
                   type="number"
                   min="0"
@@ -524,9 +660,12 @@ export function Settings() {
                     })
                   }
                 />
-              </Field>
+              </SettingFieldRow>
 
-              <Field label="每月记账周期起始日" hint="用于自定义月度周期起始（1-28）">
+              <SettingFieldRow
+                title="每月记账周期起始日"
+                description="用于自定义月度周期，支持 1–28 日。"
+              >
                 <Input
                   type="number"
                   min="1"
@@ -538,20 +677,28 @@ export function Settings() {
                     })
                   }
                 />
-              </Field>
+              </SettingFieldRow>
             </div>
           </Card>
         </MobileCollapsibleSection>
 
         {/* 数据管理 */}
-        <div className="space-y-4">
+        <div
+          className={cn(
+            'space-y-4',
+            embedded &&
+              'settings-scroll-pane p-4 sm:p-6 md:col-start-2 md:row-start-1 md:h-full md:min-h-0 md:overflow-y-auto md:overscroll-contain md:p-7',
+          )}
+        >
           <MobileCollapsibleSection
             title="数据备份"
             subtitle="导入、导出 JSON / CSV"
+            alwaysOpen={embedded}
+            className={cn(embedded && activeSection !== 'backup' && 'hidden')}
           >
-            <Card>
+            <Card className="border-0 bg-transparent p-0 shadow-none">
               <SectionTitle title="数据备份" subtitle="所有数据仅保存在本地浏览器" />
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card">
                 <SettingActionRow
                   icon={<IconDownload className="h-4 w-4" />}
                   title="导出全部数据"
@@ -585,15 +732,17 @@ export function Settings() {
           <MobileCollapsibleSection
             title="WebDAV 云同步"
             subtitle={`最近同步：${formatSyncTime(syncMeta.lastSyncAt)}`}
+            alwaysOpen={embedded}
+            className={cn(embedded && activeSection !== 'sync' && 'hidden')}
           >
-          <Card>
+          <Card className="border-0 bg-transparent p-0 shadow-none">
               <SectionTitle
                 title="WebDAV 云同步"
                 subtitle="同步为云端 JSON 文件，适合坚果云、NAS、Nextcloud 等 WebDAV 服务"
                 action={<Cloud className="h-5 w-5 text-muted-foreground" />}
               />
 
-            <div className="space-y-4">
+            <div className="space-y-4 rounded-2xl border border-border/70 bg-card p-4 shadow-[0_12px_35px_-30px_rgba(15,23,42,.3)] sm:p-5">
               <Field label="WebDAV 服务地址" hint="例如 https://dav.example.com/dav/">
                 <Input
                   value={syncConfig.serverUrl}
@@ -682,7 +831,7 @@ export function Settings() {
                 </Button>
               </div>
 
-              <div className="rounded-md border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+              <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-xs leading-relaxed text-muted-foreground">
                 <p>上次同步：{formatSyncTime(syncMeta.lastSyncAt)}</p>
                 <p>本机修改：{formatSyncTime(syncMeta.lastLocalChangeAt)}</p>
                 <p>云端版本：{formatSyncTime(syncMeta.lastRemoteUpdatedAt)}</p>
@@ -713,28 +862,49 @@ export function Settings() {
           <MobileCollapsibleSection
             title="其他操作"
             subtitle="示例数据与本地重置"
+            alwaysOpen={embedded}
+            className={cn(embedded && activeSection !== 'other' && 'hidden')}
           >
-            <Card>
+            <Card className="border-0 bg-transparent p-0 shadow-none">
               <SectionTitle title="其他操作" subtitle="演示数据与本地重置" />
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card">
+                <SettingActionRow
+                  icon={<IconHelp className="h-4 w-4" />}
+                  title="重新查看使用向导"
+                  description="按步骤了解记账、预算、报表与备份"
+                  onClick={openOnboardingGuide}
+                />
                 <SettingActionRow
                   icon={<IconSettings className="h-4 w-4" />}
                   title="载入示例数据"
                   description="用示例账本体验完整功能"
                   onClick={handleLoadSample}
                 />
+              </div>
+
+              <div className="mt-5">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-destructive">
+                  危险操作
+                </p>
+                <div className="overflow-hidden rounded-2xl border border-destructive/25 bg-destructive/[0.025]">
                 <SettingActionRow
                   icon={<IconTrash className="h-4 w-4" />}
                   title="清空所有数据"
-                  description="仅保留当前偏好设置"
+                  description="永久删除本机账单、预算、贷款、收入和目标，仅保留偏好设置"
                   onClick={handleClear}
                   danger
                 />
+                </div>
               </div>
             </Card>
           </MobileCollapsibleSection>
 
-          <Card className="bg-muted/30">
+          <Card
+            className={cn(
+              'rounded-2xl border-dashed bg-muted/25 shadow-none',
+              embedded && activeSection !== 'other' && 'hidden',
+            )}
+          >
             <p className="text-xs leading-relaxed text-muted-foreground">
               本应用为纯前端应用，不依赖任何后端服务，数据通过浏览器 localStorage
               持久化保存。清除浏览器缓存或更换设备/浏览器将导致数据丢失，请定期使用「导出

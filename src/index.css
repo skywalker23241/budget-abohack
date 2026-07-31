@@ -8,7 +8,7 @@
  * ------------------------------------------------------------------------- */
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 240 6% 97.5%;
     --foreground: 240 10% 3.9%;
 
     --card: 0 0% 100%;
@@ -23,39 +23,39 @@
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 240 4.8% 95.9%;
+    --muted: 240 5% 94.8%;
     --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 240 4.8% 95.9%;
+    --accent: 240 5% 94.2%;
     --accent-foreground: 240 5.9% 10%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 355 66% 52%;
     --destructive-foreground: 0 0% 98%;
 
-    --success: 142 72% 35%;
+    --success: 151 55% 36%;
     --success-foreground: 0 0% 98%;
 
-    --warning: 32 95% 44%;
+    --warning: 34 88% 44%;
     --warning-foreground: 0 0% 98%;
 
-    --info: 217 91% 55%;
+    --info: 226 66% 56%;
     --info-foreground: 0 0% 98%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 240 6% 88.5%;
+    --input: 240 6% 86.5%;
     --ring: 240 5.9% 10%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 240 8% 5.5%;
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 3.9%;
+    --card: 240 7% 7.5%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 3.9%;
+    --popover: 240 7% 7.5%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 0 0% 98%;
@@ -64,26 +64,26 @@
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 3.7% 15.9%;
+    --muted: 240 4% 14%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 240 3.7% 15.9%;
+    --accent: 240 4% 16%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 72% 58%;
+    --destructive: 355 70% 64%;
     --destructive-foreground: 0 0% 98%;
 
-    --success: 142 69% 58%;
+    --success: 151 55% 58%;
     --success-foreground: 142 80% 10%;
 
-    --warning: 38 92% 60%;
+    --warning: 38 82% 62%;
     --warning-foreground: 48 96% 9%;
 
-    --info: 213 94% 68%;
+    --info: 226 72% 70%;
     --info-foreground: 222 47% 11%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 240 4% 18%;
+    --input: 240 4% 20%;
     --ring: 240 4.9% 83.9%;
   }
 }
@@ -94,10 +94,19 @@
   }
   html {
     -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+    scroll-padding-top: 5rem;
   }
   body {
     @apply bg-background text-foreground antialiased;
+    min-width: 0;
+    min-height: 100dvh;
+    overflow-x: clip;
     font-feature-settings: 'tnum' 1; /* 等宽数字，金额对齐更整齐 */
+  }
+  #root {
+    min-width: 0;
+    min-height: 100dvh;
   }
   /* 隐藏 number 输入框的上下箭头 */
   input[type='number']::-webkit-outer-spin-button,
@@ -131,6 +140,14 @@
   outline: none;
 }
 
+.recharts-responsive-container {
+  min-width: 0;
+}
+
+.recharts-wrapper {
+  max-width: 100%;
+}
+
 [cmdk-overlay] {
   position: fixed;
   inset: 0;
@@ -142,9 +159,10 @@
 [cmdk-dialog] {
   position: fixed;
   left: 50%;
-  top: 12vh;
+  top: max(1rem, 12dvh);
   z-index: 51;
-  width: min(92vw, 560px);
+  width: min(calc(100% - 1rem), 560px);
+  max-height: calc(100dvh - 2rem);
   overflow: hidden;
   transform: translateX(-50%);
   border: 1px solid hsl(var(--border));
@@ -170,7 +188,7 @@
 }
 
 [cmdk-list] {
-  max-height: min(50vh, 420px);
+  max-height: min(50dvh, 420px);
   overflow-y: auto;
   padding: 0.5rem;
 }
@@ -212,6 +230,11 @@
 }
 
 @layer utilities {
+  .app-scroll-region {
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
   @keyframes app-caret-blink {
     0%,
     70%,
@@ -286,17 +309,17 @@
 
     .app-card-motion {
       transform: translateZ(0);
-      transition-duration: 220ms;
+      transition-duration: 200ms;
       transition-property: border-color, box-shadow, transform, background-color;
       transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     @media (hover: hover) {
       .app-card-motion:hover {
-        transform: translateY(-2px);
+        transform: translateY(-1px);
         box-shadow:
-          0 12px 30px -20px hsl(var(--foreground) / 0.35),
-          0 3px 12px -8px hsl(var(--foreground) / 0.18);
+          0 16px 38px -28px hsl(var(--foreground) / 0.3),
+          0 4px 14px -12px hsl(var(--foreground) / 0.15);
       }
     }
 

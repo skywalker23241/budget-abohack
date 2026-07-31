@@ -1,7 +1,7 @@
 /**
  * 应用布局：桌面端固定侧边栏，移动端抽屉式导航。
  */
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   IconDashboard,
@@ -14,10 +14,13 @@ import {
   IconSettings,
   IconMenu,
   IconClose,
+  IconHelp,
   IconPlus,
 } from './Icons';
 import { ThemeToggle } from './ThemeToggle';
 import { QuickTransactionModal } from './QuickTransactionModal';
+import { OnboardingGuide, openOnboardingGuide } from './OnboardingGuide';
+import { SettingsDialog, openSettingsDialog } from './SettingsDialog';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS: { to: string; label: string; icon: (p: any) => ReactNode }[] = [
@@ -28,54 +31,70 @@ const NAV_ITEMS: { to: string; label: string; icon: (p: any) => ReactNode }[] = 
   { to: '/app/income', label: '收入', icon: IconCoins },
   { to: '/app/reports', label: '报表', icon: IconChart },
   { to: '/app/goals', label: '目标', icon: IconTarget },
-  { to: '/app/settings', label: '设置', icon: IconSettings },
 ];
 
 const MOBILE_NAV_ITEMS: { to: string; label: string; icon: (p: any) => ReactNode }[] = [
   { to: '/app', label: '首页', icon: IconDashboard },
   { to: '/app/transactions', label: '账单', icon: IconReceipt },
   { to: '/app/budget', label: '预算', icon: IconWallet },
-  { to: '/app/settings', label: '设置', icon: IconSettings },
 ];
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-1 px-3">
+      <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+        财务工作区
+      </p>
       {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
+          data-tour={to === '/app' ? 'nav-dashboard' : `nav-${to.split('/').pop()}`}
           end={to === '/app'}
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
-              'app-press flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium',
+              'app-press group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium',
               isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                ? 'bg-foreground text-background shadow-sm [&_svg]:scale-105'
+                : 'text-muted-foreground hover:bg-accent/80 hover:text-accent-foreground',
             )
           }
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-[1.1rem] w-[1.1rem] transition-transform" />
           {label}
         </NavLink>
       ))}
+      <button
+        type="button"
+        data-tour="settings-trigger"
+        onClick={() => {
+          onNavigate?.();
+          openSettingsDialog();
+        }}
+        className="app-press mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-muted-foreground hover:bg-accent/80 hover:text-accent-foreground"
+      >
+        <IconSettings className="h-5 w-5" />
+        设置
+      </button>
     </nav>
   );
 }
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2.5 px-5 py-5">
-      <img
-        src="/logo.svg"
-        alt=""
-        className="h-9 w-9 shrink-0 rounded-xl shadow-sm"
-        aria-hidden="true"
-      />
-      <div className="leading-tight">
-        <p className="text-sm font-semibold text-foreground">个人预算</p>
-        <p className="text-xs text-muted-foreground">记账助手</p>
+    <div className="flex min-w-0 items-center gap-3 px-4 py-5">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] bg-foreground p-1.5 shadow-sm">
+        <img
+          src="/logo.svg"
+          alt=""
+          className="h-full w-full rounded-lg"
+          aria-hidden="true"
+        />
+      </span>
+      <div className="min-w-0 leading-tight">
+        <p className="truncate text-sm font-semibold tracking-tight text-foreground">个人预算</p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Finance workspace</p>
       </div>
     </div>
   );
@@ -86,30 +105,46 @@ export function Layout() {
   const [quickOpen, setQuickOpen] = useState(false);
   const location = useLocation();
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-w-0 bg-background">
       {/* 桌面侧边栏 */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r bg-card lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border/70 bg-card/95 shadow-[8px_0_35px_-32px_rgba(15,23,42,.35)] backdrop-blur-xl lg:flex">
         <Brand />
         <NavItems />
-        <div className="mt-auto flex items-center justify-between px-5 py-4">
-          <span className="text-xs text-muted-foreground">数据保存在本地浏览器</span>
-          <ThemeToggle />
+        <div className="mt-auto border-t border-border/70 px-3 py-3">
+          <button
+            type="button"
+            onClick={openOnboardingGuide}
+            className="app-press flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <IconHelp className="h-4 w-4" />
+            使用向导
+          </button>
+          <div className="mt-1 flex items-center justify-between rounded-xl bg-muted/55 px-3 py-2">
+            <span className="text-[10px] leading-4 text-muted-foreground">本地加密存储</span>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
       {/* 移动端顶栏 */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/90 px-4 py-3 backdrop-blur lg:hidden">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border/70 bg-background/85 px-4 py-3 backdrop-blur-xl lg:hidden">
+        <div className="flex min-w-0 items-center gap-2">
           <img
             src="/logo.svg"
             alt=""
             className="h-8 w-8 shrink-0 rounded-lg shadow-sm"
             aria-hidden="true"
           />
-          <span className="text-sm font-semibold text-foreground">个人预算记账助手</span>
+          <span className="truncate text-sm font-semibold text-foreground">
+            个人预算记账助手
+          </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(true)}
@@ -128,7 +163,7 @@ export function Layout() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm app-enter"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-card shadow-xl app-enter">
+          <div className="app-scroll-region absolute inset-y-0 left-0 flex max-h-dvh w-64 flex-col overflow-y-auto bg-card pb-[env(safe-area-inset-bottom)] shadow-xl app-enter">
             <div className="flex items-center justify-between">
               <Brand />
               <button
@@ -140,6 +175,17 @@ export function Layout() {
               </button>
             </div>
             <NavItems onNavigate={() => setMobileOpen(false)} />
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                openOnboardingGuide();
+              }}
+              className="app-press mx-3 mt-3 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              <IconHelp className="h-5 w-5" />
+              使用向导
+            </button>
           </div>
         </div>
       )}
@@ -167,6 +213,7 @@ export function Layout() {
 
           <button
             type="button"
+            data-tour="quick-add"
             onClick={() => setQuickOpen(true)}
             className="app-press -mt-6 flex flex-col items-center gap-1 text-[11px] font-medium text-foreground"
             aria-label="快速记账"
@@ -194,20 +241,31 @@ export function Layout() {
               <span>{label}</span>
             </NavLink>
           ))}
+          <button
+            type="button"
+            data-tour="settings-trigger"
+            onClick={openSettingsDialog}
+            className="app-press flex flex-col items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            <IconSettings className="h-5 w-5" />
+            <span>设置</span>
+          </button>
         </div>
       </nav>
 
       {/* 主内容区 */}
-      <main className="pb-24 lg:pb-0 lg:pl-60">
+      <main className="min-w-0 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-60">
         <div
           key={location.pathname}
-          className="app-page-enter mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8"
+          className="app-page-enter mx-auto min-w-0 max-w-7xl px-4 py-6 sm:px-6 lg:px-8"
         >
           <Outlet />
         </div>
       </main>
 
       <QuickTransactionModal open={quickOpen} onClose={() => setQuickOpen(false)} />
+      <SettingsDialog />
+      <OnboardingGuide />
     </div>
   );
 }

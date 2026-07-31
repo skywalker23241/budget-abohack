@@ -9,6 +9,7 @@ import { useStore } from '@/store/useStore';
 import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
 import { Field, Toggle, SelectField } from './fields';
+import { DatePicker } from '@/components/DatePicker';
 
 interface Props {
   initial?: Loan;
@@ -121,7 +122,7 @@ export function LoanForm({ initial, onClose }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="贷款名称" required error={errors.name}>
           <Input
             placeholder="如：房贷 / 车贷"
@@ -138,7 +139,7 @@ export function LoanForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="贷款类型" required>
           <SelectField
             value={type}
@@ -148,7 +149,7 @@ export function LoanForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="初始本金" required error={errors.principal}>
           <Input
             type="number"
@@ -175,7 +176,7 @@ export function LoanForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="年利率 (%)" error={errors.annualRate}>
           <Input
             type="number"
@@ -197,7 +198,7 @@ export function LoanForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="还款日（每月几号）">
           <Input
             type="number"
@@ -208,15 +209,15 @@ export function LoanForm({ initial, onClose }: Props) {
           />
         </Field>
         <Field label="开始日期" required error={errors.startDate}>
-          <Input
-            type="date"
+          <DatePicker
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={setStartDate}
+            aria-invalid={Boolean(errors.startDate)}
           />
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="贷款期限（月）" required error={errors.termMonths}>
           <Input
             type="number"

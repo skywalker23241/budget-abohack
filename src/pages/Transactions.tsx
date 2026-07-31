@@ -3,7 +3,7 @@
  * 桌面端表格展示，移动端卡片展示。
  */
 import { useEffect, useMemo, useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from '@/components/Icons';
 import type { Transaction, TransactionType } from '@/types';
 import { useStore } from '@/store/useStore';
 import {
@@ -21,6 +21,7 @@ import { TransactionForm } from '@/components/forms/TransactionForm';
 import { QuickTransactionModal } from '@/components/QuickTransactionModal';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
+import { DatePicker } from '@/components/DatePicker';
 import {
   IconPlus,
   IconSearch,
@@ -244,18 +245,22 @@ export function Transactions() {
         </div>
         <div>
           <Label className="mb-1.5 block">起始日期</Label>
-          <Input
-            type="date"
+          <DatePicker
             value={from}
-            onChange={(e) => setFrom(e.target.value)}
+            onChange={setFrom}
+            max={to || undefined}
+            clearable
+            placeholder="选择起始日期"
           />
         </div>
         <div>
           <Label className="mb-1.5 block">结束日期</Label>
-          <Input
-            type="date"
+          <DatePicker
             value={to}
-            onChange={(e) => setTo(e.target.value)}
+            onChange={setTo}
+            min={from || undefined}
+            clearable
+            placeholder="选择结束日期"
           />
         </div>
       </div>
@@ -438,20 +443,20 @@ export function Transactions() {
           </span>
         </Button>
 
-        <Card className="grid grid-cols-3 gap-2 p-4 text-center">
+        <Card className="grid grid-cols-1 gap-3 p-4 text-center min-[360px]:grid-cols-3">
           <div>
             <p className="text-xs text-muted-foreground">记录</p>
             <p className="mt-1 text-base font-semibold text-foreground">{totals.count}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">收入</p>
-            <p className="mt-1 truncate text-base font-semibold text-success">
+            <p className="mt-1 break-words text-sm font-semibold text-success [overflow-wrap:anywhere] min-[360px]:text-base">
               {formatCurrency(totals.income, cur)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">支出</p>
-            <p className="mt-1 truncate text-base font-semibold text-destructive">
+            <p className="mt-1 break-words text-sm font-semibold text-destructive [overflow-wrap:anywhere] min-[360px]:text-base">
               {formatCurrency(totals.expense, cur)}
             </p>
           </div>

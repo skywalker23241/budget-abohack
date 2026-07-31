@@ -29,16 +29,16 @@ export function Field({
   className?: string;
 }) {
   return (
-    <div className={className}>
-      <Label className="mb-1.5 flex">
+    <div className={cn('min-w-0', className)}>
+      <Label className="mb-1.5 flex break-words">
         {label}
         {required && <span className="ml-0.5 text-destructive">*</span>}
       </Label>
       {children}
       {hint && !error && (
-        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+        <p className="mt-1 break-words text-xs text-muted-foreground">{hint}</p>
       )}
-      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {error && <p className="mt-1 break-words text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -54,7 +54,7 @@ export function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex min-w-0 flex-wrap gap-1.5">
       {options.map((opt) => {
         const active = value === opt.value;
         return (
@@ -89,8 +89,8 @@ export function Toggle({
 }) {
   const id = useId();
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
-      <Label htmlFor={id} className="cursor-pointer text-sm font-normal text-foreground">
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+      <Label htmlFor={id} className="min-w-0 cursor-pointer break-words text-sm font-normal text-foreground">
         {label}
       </Label>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />

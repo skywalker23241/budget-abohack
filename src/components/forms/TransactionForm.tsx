@@ -15,6 +15,7 @@ import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
 import { Field, SegmentedControl, Toggle, SelectField } from './fields';
 import { InlineDisclosure } from '@/components/MobileCollapsibleSection';
+import { DatePicker } from '@/components/DatePicker';
 
 interface Props {
   initial?: Transaction;
@@ -106,12 +107,12 @@ export function TransactionForm({ initial, defaultType, onClose }: Props) {
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="日期" required error={errors.date}>
-          <Input
-            type="date"
+          <DatePicker
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={setDate}
+            aria-invalid={Boolean(errors.date)}
           />
         </Field>
         <Field label="金额" required error={errors.amount}>
@@ -127,7 +128,7 @@ export function TransactionForm({ initial, defaultType, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="分类" required error={errors.category}>
           <SelectField
             value={category}

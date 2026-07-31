@@ -13,17 +13,17 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+    <div className="mb-7 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <h1 className="break-words text-2xl font-semibold tracking-[-0.03em] text-foreground sm:text-3xl">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+          <p className="mt-1.5 break-words text-sm text-muted-foreground">{subtitle}</p>
         )}
       </div>
       {actions && (
-        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>
       )}
     </div>
   );

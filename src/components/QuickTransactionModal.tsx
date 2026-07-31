@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PaymentMethod, TransactionType } from '@/types';
 import {
   INCOME_CATEGORIES,
@@ -12,6 +12,7 @@ import { SelectField } from '@/components/forms/fields';
 import { InlineDisclosure } from '@/components/MobileCollapsibleSection';
 import { useToast } from '@/components/Toast';
 import { cn } from '@/lib/utils';
+import { DatePicker } from '@/components/DatePicker';
 
 const QUICK_EXPENSE_CATEGORIES = [
   '餐饮',
@@ -75,7 +76,16 @@ export function QuickTransactionModal({
   function handleClose() {
     reset();
     onClose();
+    window.dispatchEvent(new CustomEvent('budget-app:quick-entry:closed'));
   }
+
+  useEffect(() => {
+    const closeFromGuide = () => {
+      if (open) handleClose();
+    };
+    window.addEventListener('budget-app:quick-entry:close', closeFromGuide);
+    return () => window.removeEventListener('budget-app:quick-entry:close', closeFromGuide);
+  }, [open]);
 
   function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -101,7 +111,7 @@ export function QuickTransactionModal({
 
   return (
     <Modal open={open} onClose={handleClose} title="快速记账" maxWidth="max-w-xl">
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form data-tour="quick-form" onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-1">
           {(['expense', 'income'] as TransactionType[]).map((item) => {
             const active = type === item;
@@ -181,7 +191,7 @@ export function QuickTransactionModal({
             </div>
             <div>
               <p className="mb-1.5 text-sm font-medium text-foreground">日期</p>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <DatePicker value={date} onChange={setDate} />
             </div>
           </div>
 

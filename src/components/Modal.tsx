@@ -36,14 +36,14 @@ export function Modal({
     >
       <DialogContent
         className={cn(
-          'max-h-[92vh] gap-0 overflow-hidden p-0',
+          'max-h-[calc(100dvh-1rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-h-[92dvh]',
           maxWidth,
         )}
       >
         <DialogHeader className="border-b px-5 py-4 text-left">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[calc(92vh-8rem)] overflow-y-auto px-5 py-4">
+        <div className="app-scroll-region min-h-0 overflow-y-auto px-5 py-4">
           {children}
         </div>
         {footer && (

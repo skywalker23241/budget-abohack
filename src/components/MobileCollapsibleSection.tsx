@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@/components/Icons';
 import { cn } from '@/lib/utils';
 
 function useIsMobile() {
@@ -21,6 +21,7 @@ export function MobileCollapsibleSection({
   subtitle,
   children,
   defaultOpen = false,
+  alwaysOpen = false,
   className,
   contentClassName,
 }: {
@@ -28,12 +29,13 @@ export function MobileCollapsibleSection({
   subtitle?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
+  alwaysOpen?: boolean;
   className?: string;
   contentClassName?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const isMobile = useIsMobile();
-  const inactive = isMobile && !open;
+  const inactive = !alwaysOpen && isMobile && !open;
   const inertProps = inactive ? ({ inert: '' } as { inert: string }) : {};
 
   return (
@@ -41,11 +43,14 @@ export function MobileCollapsibleSection({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="app-press flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left shadow-sm active:bg-accent md:hidden"
+        className={cn(
+          'app-press flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left shadow-sm active:bg-accent md:hidden',
+          alwaysOpen && 'hidden',
+        )}
         aria-expanded={open}
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-foreground">{title}</span>
+          <span className="block break-words text-sm font-semibold text-foreground">{title}</span>
           {subtitle && (
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
               {subtitle}
@@ -66,10 +71,20 @@ export function MobileCollapsibleSection({
         className={cn(
           'grid transition-[grid-template-rows,opacity] [transition-duration:350ms] ease-out md:grid-rows-[1fr] md:opacity-100',
           inactive && 'pointer-events-none md:pointer-events-auto',
-          open ? 'mt-3 grid-rows-[1fr] opacity-100 md:mt-0' : 'grid-rows-[0fr] opacity-0 md:mt-0',
+          alwaysOpen
+            ? 'grid-rows-[1fr] opacity-100'
+            : open
+              ? 'mt-3 grid-rows-[1fr] opacity-100 md:mt-0'
+              : 'grid-rows-[0fr] opacity-0 md:mt-0',
         )}
       >
-        <div className={cn('min-h-0 overflow-hidden', open && 'app-enter', contentClassName)}>
+        <div
+          className={cn(
+            'min-h-0 overflow-hidden',
+            (open || alwaysOpen) && 'app-enter',
+            contentClassName,
+          )}
+        >
           {children}
         </div>
       </div>
@@ -100,7 +115,7 @@ export function InlineDisclosure({
         aria-expanded={open}
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-medium text-foreground">{title}</span>
+          <span className="block break-words text-sm font-medium text-foreground">{title}</span>
           {subtitle && (
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
               {subtitle}
