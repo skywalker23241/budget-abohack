@@ -1,0 +1,74 @@
+[
+  {
+    "width": 320,
+    "height": 640,
+    "summaryExcludesSettled": true,
+    "nearestFirst": true,
+    "noOverflow": true,
+    "details": true,
+    "editCancel": true,
+    "deleteCancel": true,
+    "repaymentCancel": true,
+    "repaymentAndTransaction": true,
+    "settledFilter": true,
+    "addForm": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "summaryExcludesSettled": true,
+    "nearestFirst": true,
+    "noOverflow": true,
+    "details": true,
+    "editCancel": true,
+    "deleteCancel": true,
+    "repaymentCancel": true,
+    "repaymentAndTransaction": true,
+    "settledFilter": true,
+    "addForm": true
+  },
+  {
+    "width": 780,
+    "height": 480,
+    "summaryExcludesSettled": true,
+    "nearestFirst": true,
+    "noOverflow": true,
+    "details": true,
+    "editCancel": true,
+    "deleteCancel": true,
+    "repaymentCancel": true,
+    "repaymentAndTransaction": true,
+    "settledFilter": true,
+    "addForm": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "summaryExcludesSettled": true,
+    "nearestFirst": true,
+    "noOverflow": true,
+    "details": true,
+    "editCancel": true,
+    "deleteCancel": true,
+    "repaymentCancel": true,
+    "repaymentAndTransaction": true,
+    "settledFilter": true,
+    "addForm": true
+  },
+  {
+    "scenario": "empty",
+    "passed": true
+  },
+  {
+    "scenario": "all-settled",
+    "passed": true
+  },
+  {
+    "scenario": "periods-exhausted",
+    "passed": true
+  },
+  {
+    "scenario": "long-name",
+    "passed": true
+  }
+]

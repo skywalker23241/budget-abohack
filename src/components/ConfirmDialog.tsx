@@ -72,7 +72,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               onClick={() => close(true)}
               className={
                 opts?.danger
-                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                  ? 'border-destructive/30 bg-destructive text-destructive-foreground hover:bg-destructive/90'
                   : undefined
               }
             >

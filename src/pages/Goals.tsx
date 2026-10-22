@@ -19,6 +19,7 @@ import { Card, StatCard, ProgressBar, Badge, EmptyState, Button, Input } from '@
 import { Modal } from '@/components/Modal';
 import { GoalForm } from '@/components/forms/GoalForm';
 import { Field } from '@/components/forms/fields';
+import { AmountText } from '@/components/AmountText';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
 import {
@@ -66,15 +67,11 @@ function ContributeModal({
       <div className="rounded-lg bg-muted p-3 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">当前已存</span>
-          <span className="font-medium text-foreground">
-            {formatCurrency(goal.currentAmount, settings.currency)}
-          </span>
+          <AmountText className="w-[60%] text-right" value={formatCurrency(goal.currentAmount,settings.currency)} maxSize={16}/>
         </div>
         <div className="mt-1 flex justify-between">
           <span className="text-muted-foreground">目标金额</span>
-          <span className="font-medium text-foreground">
-            {formatCurrency(goal.targetAmount, settings.currency)}
-          </span>
+          <AmountText className="w-[60%] text-right" value={formatCurrency(goal.targetAmount,settings.currency)} maxSize={16}/>
         </div>
       </div>
       <Field label="金额" required error={error}>
@@ -92,11 +89,11 @@ function ContributeModal({
         />
       </Field>
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={() => apply(-1)}>
+        <Button variant="outline" className="h-11" onClick={() => apply(-1)}>
           <IconArrowDown className="h-4 w-4" />
           减少
         </Button>
-        <Button onClick={() => apply(1)}>
+        <Button className="h-11" onClick={() => apply(1)}>
           <IconArrowUp className="h-4 w-4" />
           增加
         </Button>
@@ -184,11 +181,13 @@ export function Goals() {
           { label: '本月建议', value: formatCurrency(summary.suggested, cur) },
           { label: '已完成', value: `${completedGoals} 个` },
         ]}
-      />
+      >
+        {goals.length > 0 && <ProgressBar value={summary.progress} className="h-1.5" />}
+      </AppSummaryCard>
 
       {goals.length > 0 && (
         <MobileCollapsibleSection
-          className="mt-4"
+          className="mt-4 hidden lg:block"
           title="目标概览"
           subtitle={`总进度 ${formatPercent(summary.progress)}，本月建议 ${formatCurrency(
             summary.suggested,
@@ -259,35 +258,23 @@ export function Goals() {
                       </div>
                       <p className="mt-1 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                         截止 {g.deadline}
-                        {g.note ? ` · ${g.note}` : ''}
                       </p>
                     </div>
                     <div className="flex shrink-0">
                       <button
                         onClick={() => openEdit(g)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        className="flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
                         aria-label="编辑"
                       >
                         <IconEdit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(g)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        aria-label="删除"
-                      >
-                        <IconTrash className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
 
                   <div className="mt-4">
-                    <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                      <span className="break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
-                        {formatCurrency(g.currentAmount, cur)}
-                      </span>
-                      <span className="break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
-                        / {formatCurrency(g.targetAmount, cur)}
-                      </span>
+                    <div className="mb-3 grid grid-cols-2 gap-3">
+                      <div className="min-w-0"><p className="mb-1 text-xs text-muted-foreground">已积累</p><AmountText value={formatCurrency(g.currentAmount,cur)} maxSize={20}/></div>
+                      <div className="min-w-0"><p className="mb-1 text-xs text-muted-foreground">目标金额</p><AmountText value={formatCurrency(g.targetAmount,cur)} maxSize={20}/></div>
                     </div>
                     <ProgressBar
                       value={progress}
@@ -298,28 +285,21 @@ export function Goals() {
                     </p>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-1 gap-2 rounded-lg bg-muted p-3 text-center text-xs min-[480px]:grid-cols-3">
+                  <div className="mt-3 grid grid-cols-2 gap-3 rounded-2xl bg-muted/40 p-3 text-xs">
                     <div>
                       <p className="text-muted-foreground">还差</p>
-                      <p className="mt-0.5 break-words font-semibold text-foreground [overflow-wrap:anywhere]">
-                        {formatCurrency(remaining, cur)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">预计完成</p>
-                      <p className="mt-0.5 break-words font-semibold text-foreground">{eta}</p>
+                      <AmountText className="mt-1" value={formatCurrency(remaining,cur)} maxSize={16}/>
                     </div>
                     <div>
                       <p className="text-muted-foreground">建议月投</p>
-                      <p className="mt-0.5 break-words font-semibold text-foreground [overflow-wrap:anywhere]">
-                        {formatCurrency(suggested, cur)}
-                      </p>
+                      <AmountText className="mt-1" value={formatCurrency(suggested,cur)} maxSize={16}/>
                     </div>
                   </div>
+                  <details className="mt-1 text-xs text-muted-foreground"><summary className="flex min-h-11 cursor-pointer items-center">计划与更多操作</summary><p className="mb-2 leading-5">预计完成：{eta}</p>{g.note && <p className="mb-2 break-words leading-5">{g.note}</p>}<Button variant="ghost" className="h-11 w-full text-destructive" onClick={()=>handleDelete(g)}><IconTrash/>删除目标</Button></details>
 
                   <Button
                     variant="outline"
-                    className="mt-3 w-full"
+                    className="mt-1 h-11 w-full rounded-2xl"
                     onClick={() => setContributing(g)}
                   >
                     更新进度

@@ -1,5 +1,5 @@
 /**
- * 应用布局：桌面端固定侧边栏，移动端抽屉式导航。
+ * 应用布局：桌面端固定侧边栏，移动端底部导航与更多功能面板。
  */
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
@@ -12,16 +12,16 @@ import {
   IconChart,
   IconTarget,
   IconSettings,
-  IconMenu,
-  IconClose,
   IconHelp,
   IconPlus,
+  House,
 } from './Icons';
 import { ThemeToggle } from './ThemeToggle';
 import { QuickTransactionModal } from './QuickTransactionModal';
 import { OnboardingGuide, openOnboardingGuide } from './OnboardingGuide';
 import { SettingsDialog, openSettingsDialog } from './SettingsDialog';
 import { cn } from '@/lib/utils';
+import { MobileMoreMenu } from './MobileMoreMenu';
 
 const NAV_ITEMS: { to: string; label: string; icon: (p: any) => ReactNode }[] = [
   { to: '/app', label: '仪表盘', icon: IconDashboard },
@@ -34,7 +34,7 @@ const NAV_ITEMS: { to: string; label: string; icon: (p: any) => ReactNode }[] = 
 ];
 
 const MOBILE_NAV_ITEMS: { to: string; label: string; icon: (p: any) => ReactNode }[] = [
-  { to: '/app', label: '首页', icon: IconDashboard },
+  { to: '/app', label: '首页', icon: House },
   { to: '/app/transactions', label: '账单', icon: IconReceipt },
   { to: '/app/budget', label: '预算', icon: IconWallet },
 ];
@@ -100,7 +100,6 @@ function Brand() {
 }
 
 export function Layout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const location = useLocation();
 
@@ -143,53 +142,31 @@ export function Layout() {
             PennyPeek
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           <ThemeToggle />
           <button
-            onClick={() => setMobileOpen(true)}
-            className="app-press rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            aria-label="打开菜单"
+            type="button"
+            onClick={openOnboardingGuide}
+            aria-label="使用向导"
+            title="使用向导"
+            className="app-press flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <IconMenu className="h-5 w-5" />
+            <IconHelp className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            data-tour="settings-trigger"
+            onClick={openSettingsDialog}
+            aria-label="设置"
+            title="设置"
+            className="app-press flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <IconSettings className="h-5 w-5" />
           </button>
         </div>
       </header>
 
-      {/* 移动端抽屉 */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm app-enter"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="glass-popup app-scroll-region absolute inset-y-0 left-0 flex max-h-dvh w-64 flex-col overflow-y-auto pb-[env(safe-area-inset-bottom)] shadow-xl app-enter">
-            <div className="flex items-center justify-between">
-              <Brand />
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="app-press mr-3 rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                aria-label="关闭菜单"
-              >
-                <IconClose className="h-5 w-5" />
-              </button>
-            </div>
-            <NavItems onNavigate={() => setMobileOpen(false)} />
-            <button
-              type="button"
-              onClick={() => {
-                setMobileOpen(false);
-                openOnboardingGuide();
-              }}
-              className="app-press mx-3 mt-3 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            >
-              <IconHelp className="h-5 w-5" />
-              使用向导
-            </button>
-          </div>
-        </div>
-      )}
-
-      <nav className="glass-panel fixed inset-x-2 bottom-2 z-20 rounded-3xl px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 lg:hidden">
+      <nav aria-label="主要导航" className="glass-panel fixed inset-x-2 bottom-2 z-20 rounded-3xl px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 items-end gap-1">
           {MOBILE_NAV_ITEMS.slice(0, 2).map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -217,7 +194,7 @@ export function Layout() {
             className="app-press -mt-6 flex flex-col items-center gap-1 text-[11px] font-medium text-foreground"
             aria-label="快速记账"
           >
-            <span data-tour-focus className="glass-button flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground ring-4 ring-background">
+            <span data-tour-focus className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/30 bg-primary text-primary-foreground shadow-sm ring-4 ring-background">
               <IconPlus className="h-6 w-6" />
             </span>
             <span>记账</span>
@@ -240,15 +217,7 @@ export function Layout() {
               <span>{label}</span>
             </NavLink>
           ))}
-          <button
-            type="button"
-            data-tour="settings-trigger"
-            onClick={openSettingsDialog}
-            className="app-press flex flex-col items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            <IconSettings className="h-5 w-5" />
-            <span>设置</span>
-          </button>
+          <MobileMoreMenu />
         </div>
       </nav>
 

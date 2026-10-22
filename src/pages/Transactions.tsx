@@ -5,6 +5,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SlidersHorizontal } from '@/components/Icons';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { AmountText } from '@/components/AmountText';
+import { cn } from '@/lib/utils';
 import type { Transaction, TransactionType } from '@/types';
 import { useStore } from '@/store/useStore';
 import {
@@ -187,6 +189,7 @@ export function Transactions() {
     });
     if (ok) {
       deleteTransaction(t.id);
+      if (editing?.id === t.id) setShowForm(false);
       toast.success('记录已删除');
     }
   }
@@ -255,14 +258,14 @@ export function Transactions() {
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{group.date} · {group.items.length} 笔</p>
                 </div>
-                <div className="flex gap-3 text-xs">
+                <div className="flex max-w-full flex-wrap justify-end gap-x-3 gap-y-1 text-xs">
                   {group.income > 0 && (
-                    <span className="text-success">
+                    <span className="whitespace-nowrap text-success">
                       收 {formatCurrency(group.income, cur)}
                     </span>
                   )}
                   {group.expense > 0 && (
-                    <span className="text-destructive">
+                    <span className="whitespace-nowrap text-destructive">
                       支 {formatCurrency(group.expense, cur)}
                     </span>
                   )}
@@ -294,7 +297,7 @@ export function Transactions() {
                         type="button"
                         onClick={() => openEdit(t)}
                         aria-label={`编辑${t.category}，${formatCurrency(t.amount, cur)}`}
-                        className="app-press min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="app-press min-h-11 min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate text-sm font-medium text-foreground">
@@ -318,16 +321,9 @@ export function Transactions() {
                         </p>
                       </button>
 
-                      <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
-                        <span
-                          className={`whitespace-nowrap text-sm font-semibold tabular-nums sm:text-base ${
-                            isIncome ? 'text-success' : 'text-foreground'
-                          }`}
-                        >
-                          {isIncome ? '+' : '-'}
-                          {formatCurrency(t.amount, cur)}
-                        </span>
-                        <div className="flex">
+                      <div className="flex w-[42%] min-w-0 shrink-0 flex-col items-end gap-1 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                        <AmountText className={cn('w-full text-right sm:w-40',isIncome?'text-success':'text-foreground')} value={`${isIncome?'+':t.type==='transfer'?'':'-'}${formatCurrency(t.amount,cur)}`} maxSize={16}/>
+                        <div className="hidden md:flex">
                           <button
                             onClick={() => openEdit(t)}
                             type="button"
@@ -359,11 +355,11 @@ export function Transactions() {
   return (
     <>
       <PageHeader
-        title="记账"
+        title="账单"
         actions={
           <>
           <Button variant="outline" onClick={() => setShowImport(true)}><IconUpload />导入账单</Button>
-          <Button onClick={openAdd}>
+          <Button onClick={openAdd} className="hidden md:inline-flex">
             <IconPlus className="h-4 w-4" />
             记一笔
           </Button>
@@ -380,7 +376,7 @@ export function Transactions() {
               { value: 'expense', label: '支出' },
             ] as const).map(({ value, label }) => (
               <button key={value} type="button" aria-pressed={typeFilter === value} onClick={() => setTypeFilter(value)}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${typeFilter === value ? 'bg-primary/15 text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'}`}>
+                className="app-segment min-h-11 rounded-xl px-3 py-2 text-sm font-medium">
                 {label}
               </button>
             ))}
@@ -388,10 +384,10 @@ export function Transactions() {
           <div className="relative order-first w-full sm:order-none sm:ml-auto sm:w-64 xl:w-80">
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input aria-label="搜索备注或分类" placeholder="搜索备注或分类" value={search} onChange={(event) => setSearch(event.target.value)}
-              className="h-9 border-0 bg-transparent pl-9 pr-9 shadow-none focus-visible:ring-1" />
+              className="h-11 border-0 bg-transparent pl-9 pr-9 shadow-none focus-visible:ring-1" />
             {search && <button type="button" onClick={() => setSearch('')} aria-label="清空搜索" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="h-3.5 w-3.5" /></button>}
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setShowFilters(true)} aria-label={filterCount ? `筛选，已启用 ${filterCount} 项条件` : '筛选与排序'} className="ml-auto gap-2 sm:ml-0">
+          <Button variant="ghost" size="sm" onClick={() => setShowFilters(true)} aria-label={filterCount ? `筛选，已启用 ${filterCount} 项条件` : '筛选与排序'} className="ml-auto h-11 gap-2 sm:ml-0">
             <SlidersHorizontal />筛选
             {filterCount > 0 && <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/20 px-1 text-[10px] text-accent-foreground">{filterCount}</span>}
           </Button>
@@ -408,9 +404,9 @@ export function Transactions() {
             <span>{hasFilter ? '找到' : '共'} {totals.count} 笔记录</span>
             {(hasFilter || sort !== 'date-desc') && <button type="button" onClick={resetFilters} className="rounded-sm underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">重置条件</button>}
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span>收入 <span className="font-medium text-success">{formatCurrency(totals.income, cur)}</span></span>
-            <span>支出 <span className="font-medium text-destructive">{formatCurrency(totals.expense, cur)}</span></span>
+          <div className="grid w-full grid-cols-2 gap-3 sm:w-72">
+            <div className="min-w-0"><span>收入</span><AmountText className="text-success" value={formatCurrency(totals.income,cur)} maxSize={16}/></div>
+            <div className="min-w-0"><span>支出</span><AmountText className="text-destructive" value={formatCurrency(totals.expense,cur)} maxSize={16}/></div>
           </div>
         </div>
       </section>
@@ -476,6 +472,7 @@ export function Transactions() {
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? '编辑记录' : '新增记录'}
+        footer={editing ? <Button variant="ghost" className="h-11 w-full text-destructive md:hidden" onClick={()=>handleDelete(editing)}>删除这条记录</Button> : undefined}
       >
         <TransactionForm
           initial={editing ?? undefined}

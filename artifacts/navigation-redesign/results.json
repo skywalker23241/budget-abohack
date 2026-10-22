@@ -1,0 +1,58 @@
+[
+  {
+    "name": "mobile",
+    "headerSettingsAndGuide": true,
+    "noDuplicateNavigation": true,
+    "sheetInBounds": true,
+    "keyboardFocus": true,
+    "escapeAndOverlay": true,
+    "allFourDestinations": true,
+    "settingsHandoff": true,
+    "onboardingHandoff": true,
+    "mobileTourTarget": true,
+    "desktopResize": true,
+    "errors": []
+  },
+  {
+    "name": "small",
+    "headerSettingsAndGuide": true,
+    "noDuplicateNavigation": true,
+    "sheetInBounds": true,
+    "keyboardFocus": true,
+    "escapeAndOverlay": true,
+    "allFourDestinations": true,
+    "settingsHandoff": true,
+    "onboardingHandoff": true,
+    "mobileTourTarget": true,
+    "desktopResize": true,
+    "errors": []
+  },
+  {
+    "name": "dark",
+    "headerSettingsAndGuide": true,
+    "noDuplicateNavigation": true,
+    "sheetInBounds": true,
+    "keyboardFocus": true,
+    "escapeAndOverlay": true,
+    "allFourDestinations": true,
+    "settingsHandoff": true,
+    "onboardingHandoff": true,
+    "mobileTourTarget": true,
+    "desktopResize": true,
+    "errors": []
+  },
+  {
+    "name": "landscape",
+    "headerSettingsAndGuide": true,
+    "noDuplicateNavigation": true,
+    "sheetInBounds": true,
+    "keyboardFocus": true,
+    "escapeAndOverlay": true,
+    "allFourDestinations": true,
+    "settingsHandoff": true,
+    "onboardingHandoff": true,
+    "mobileTourTarget": true,
+    "desktopResize": true,
+    "errors": []
+  }
+]

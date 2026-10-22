@@ -1,0 +1,92 @@
+[
+  {
+    "width": 320,
+    "height": 690,
+    "colorScheme": "light",
+    "singleLineAmounts": 13,
+    "selectedMonthConsistent": true,
+    "quickEntryCancel": true,
+    "ledgerUnchanged": true,
+    "noRuntimeErrors": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "light",
+    "singleLineAmounts": 13,
+    "selectedMonthConsistent": true,
+    "quickEntryCancel": true,
+    "ledgerUnchanged": true,
+    "noRuntimeErrors": true
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "colorScheme": "light",
+    "singleLineAmounts": 13,
+    "selectedMonthConsistent": true,
+    "quickEntryCancel": true,
+    "ledgerUnchanged": true,
+    "noRuntimeErrors": true
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "colorScheme": "light",
+    "singleLineAmounts": 13,
+    "selectedMonthConsistent": true,
+    "quickEntryCancel": true,
+    "ledgerUnchanged": true,
+    "noRuntimeErrors": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "dark",
+    "singleLineAmounts": 13,
+    "selectedMonthConsistent": true,
+    "quickEntryCancel": true,
+    "ledgerUnchanged": true,
+    "noRuntimeErrors": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "colorScheme": "light",
+    "singleLineAmounts": 14,
+    "selectedMonthConsistent": true,
+    "quickEntryCancel": true,
+    "ledgerUnchanged": true,
+    "noRuntimeErrors": true
+  },
+  {
+    "scenario": "normal",
+    "singleLineAmounts": true,
+    "budgetLink": true,
+    "expectedSummary": true
+  },
+  {
+    "scenario": "empty",
+    "singleLineAmounts": true,
+    "budgetLink": true,
+    "expectedSummary": true
+  },
+  {
+    "scenario": "overspent",
+    "singleLineAmounts": true,
+    "budgetLink": true,
+    "expectedSummary": true
+  },
+  {
+    "scenario": "no-income",
+    "singleLineAmounts": true,
+    "budgetLink": true,
+    "expectedSummary": true
+  },
+  {
+    "scenario": "large-HKD",
+    "singleLineAmounts": true,
+    "budgetLink": true,
+    "expectedSummary": true
+  }
+]

@@ -52,7 +52,7 @@ const GUIDE_STEPS: GuideStep[] = [
     title: '从生活里的每一笔开始',
     description:
       '点「记一笔」就能记录金额、分类和日期，收入与支出都在这里。',
-    hint: '想试试？点击高亮按钮，关闭表单后继续导览。',
+    hint: '可以先试记一笔，关闭表单后继续导览。',
     icon: IconReceipt,
     action: '下一步',
   },
@@ -76,7 +76,7 @@ const GUIDE_STEPS: GuideStep[] = [
     title: '看清钱花在了哪里',
     description:
       '只要持续记账，报表就会自动计算收入、支出、储蓄率、分类占比和异常消费。',
-    hint: '先看本月结余，再往下看最大支出分类与变化趋势。',
+    hint: '先看本月结余，导览结束后可下滑查看消费趋势。',
     icon: IconChart,
     action: '下一步',
   },
@@ -177,6 +177,18 @@ function coachmarkPosition(rect: TargetRect | null, cardHeight: number): CSSProp
   const below = viewportHeight - rect.bottom;
   const above = rect.top;
   const placeBelow = below >= height + 28 || (above < height + 28 && below >= above);
+  // Keep the target separated from the card on short mobile screens.
+  // The content can scroll while the header and actions remain visible.
+  const availableHeight = Math.max(0, (placeBelow ? below : above) - 28);
+  if (viewportWidth < 768 && availableHeight >= 180) {
+    const mobileHeight = Math.min(height, availableHeight);
+    return {
+      left: clampLeft(rect.left + rect.width / 2 - cardWidth / 2),
+      top: placeBelow ? rect.bottom + 16 : rect.top - mobileHeight - 16,
+      width: cardWidth,
+      maxHeight: availableHeight,
+    };
+  }
   return {
     left: clampLeft(rect.left + rect.width / 2 - cardWidth / 2),
     top: clampTop(placeBelow ? rect.bottom + 16 : rect.top - height - 16),
@@ -201,6 +213,8 @@ export function OnboardingGuide() {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const step = GUIDE_STEPS[stepIndex];
+  const isMobileSettings = step.id === 'settings-trigger' && viewport.width < 1024;
+  const stepTarget = step.target;
   const isLastStep = stepIndex === GUIDE_STEPS.length - 1;
 
   useEffect(() => {
@@ -323,7 +337,7 @@ export function OnboardingGuide() {
     if (!open || suspended) return;
 
     const updateTarget = () => {
-      const target = findVisibleTarget(step.target);
+      const target = findVisibleTarget(stepTarget);
       if (!target) {
         setTargetRect(null);
         return;
@@ -345,13 +359,13 @@ export function OnboardingGuide() {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', updateTarget, true);
     };
-  }, [open, started, step.target, suspended]);
+  }, [open, started, stepTarget, suspended]);
 
   useEffect(() => {
     if (!open || !started || suspended || !['quick-entry', 'settings-trigger'].includes(step.id)) return;
 
     const handleTargetClick = (event: MouseEvent) => {
-      const clicked = (event.target as HTMLElement).closest(step.target);
+      const clicked = (event.target as HTMLElement).closest(stepTarget);
       if (!clicked) return;
       if (step.id === 'quick-entry') {
         setSuspended(true);
@@ -362,7 +376,7 @@ export function OnboardingGuide() {
 
     document.addEventListener('click', handleTargetClick, true);
     return () => document.removeEventListener('click', handleTargetClick, true);
-  }, [open, started, step.id, step.target, suspended]);
+  }, [open, started, step.id, stepTarget, suspended]);
 
   function closeGuide(markComplete = true) {
     window.clearTimeout(transitionTimer.current);
@@ -395,6 +409,11 @@ export function OnboardingGuide() {
       return;
     }
     changeStep(Math.min(GUIDE_STEPS.length - 1, stepIndex + 1));
+  }
+
+  function tryQuickEntry() {
+    if (switching) return;
+    findVisibleTarget('[data-tour="quick-add"]')?.click();
   }
 
   if (!open || suspended) return null;
@@ -439,73 +458,77 @@ export function OnboardingGuide() {
         aria-describedby="onboarding-description"
         data-onboarding-ui
         data-switching={switching}
-        className="glass-popup fixed z-[90] max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border p-5 text-popover-foreground shadow-[0_20px_70px_hsl(var(--foreground)/0.12)] transition-opacity duration-150 motion-reduce:transition-none data-[switching=true]:pointer-events-none data-[switching=true]:opacity-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:p-6"
-        style={started ? coachmarkPosition(targetRect, cardHeight) : { left: '50%', top: '50%', width: 'min(28rem,calc(100vw - 1.5rem))', transform: 'translate(-50%,-50%)' }}
+        className={`glass-popup fixed z-[90] max-h-[calc(100dvh-1.5rem)] overscroll-contain rounded-[1.75rem] border p-5 text-popover-foreground shadow-[0_20px_70px_hsl(var(--foreground)/0.12)] transition-opacity duration-150 motion-reduce:transition-none data-[switching=true]:pointer-events-none data-[switching=true]:opacity-0 sm:rounded-[1.5rem] sm:p-6 ${started ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
+        style={started ? coachmarkPosition(targetRect, cardHeight) : viewport.width < 640 ? { left: 12, bottom: 'max(12px, env(safe-area-inset-bottom))', width: 'calc(100vw - 1.5rem)', maxHeight: 'calc(100dvh - max(12px, env(safe-area-inset-bottom)) - 12px)' } : { left: '50%', top: '50%', width: 'min(28rem,calc(100vw - 1.5rem))', transform: 'translate(-50%,-50%)' }}
       >
         {!started ? (
           <>
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">PennyPeek · 快速上手</span>
-              <Button variant="ghost" size="icon" className="-mr-2 -mt-2 h-8 w-8 text-muted-foreground" onClick={() => closeGuide()} aria-label="退出向导"><IconClose /></Button>
+              <Button variant="ghost" size="icon" className="-mr-2 -mt-2 h-11 w-11 rounded-full text-muted-foreground sm:h-8 sm:w-8" onClick={() => closeGuide()} aria-label="退出向导"><IconClose /></Button>
             </div>
             <div className="pb-2 pt-5 text-center">
               <img src="/logo.svg" alt="" className="mx-auto h-16 w-16 rounded-2xl shadow-[0_8px_24px_hsl(var(--primary)/0.2)]" />
-              <h2 id="onboarding-title" className="mt-5 text-2xl font-semibold tracking-tight">把钱花明白，从这里开始。</h2>
+              <h2 id="onboarding-title" className="mt-5 text-[22px] font-semibold leading-snug tracking-tight sm:text-2xl">把钱花明白，<br className="sm:hidden" />从这里开始。</h2>
               <p id="onboarding-description" className="mx-auto mt-3 max-w-xs text-sm leading-7 text-muted-foreground">花一分钟认识记账、预算和报表，<br />找到适合自己的日常记账节奏。</p>
-              <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs text-accent-foreground [&_svg]:h-4 [&_svg]:w-4">
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2"><IconReceipt />记录收支</span>
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2"><IconWallet />安排预算</span>
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2"><ShieldCheck />自己保管</span>
+              <div className="mt-5 grid grid-cols-3 gap-1.5 text-[11px] text-accent-foreground sm:flex sm:justify-center sm:gap-2 sm:text-xs [&_svg]:h-4 [&_svg]:w-4">
+                <span className="inline-flex flex-col items-center justify-center gap-2 rounded-2xl bg-primary/10 px-2 py-3 sm:flex-row sm:gap-1.5 sm:rounded-xl sm:px-3 sm:py-2"><IconReceipt />记录收支</span>
+                <span className="inline-flex flex-col items-center justify-center gap-2 rounded-2xl bg-primary/10 px-2 py-3 sm:flex-row sm:gap-1.5 sm:rounded-xl sm:px-3 sm:py-2"><IconWallet />安排预算</span>
+                <span className="inline-flex flex-col items-center justify-center gap-2 rounded-2xl bg-primary/10 px-2 py-3 sm:flex-row sm:gap-1.5 sm:rounded-xl sm:px-3 sm:py-2"><ShieldCheck />自己保管</span>
               </div>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border/50 pt-5">
-              <Button variant="ghost" onClick={() => closeGuide()}>稍后再看</Button>
-              <Button disabled={switching} onClick={() => changeStep(0, true)}>开始导览<IconChevronRight /></Button>
+            <div className="mt-6 flex flex-col-reverse gap-2 border-t border-border/50 pt-4 sm:grid sm:grid-cols-2 sm:gap-3 sm:pt-5">
+              <Button variant="ghost" className="h-11 rounded-2xl text-muted-foreground sm:h-10 sm:rounded-lg" onClick={() => closeGuide()}>稍后再看</Button>
+              <Button className="h-12 rounded-2xl sm:h-10 sm:rounded-lg" disabled={switching} onClick={() => changeStep(0, true)}>开始导览<IconChevronRight /></Button>
             </div>
-            <p className="mt-4 text-center text-[11px] leading-5 text-muted-foreground">随时可以从菜单中的「使用向导」重新打开。</p>
+            <p className="mt-2 text-center text-[11px] leading-5 text-muted-foreground sm:mt-4">约 1 分钟 · 随时可从「使用向导」重新打开</p>
           </>
         ) : (
           <>
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex shrink-0 items-center justify-between gap-4">
               <span className="inline-flex items-center gap-2 text-xs font-medium text-accent-foreground">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15"><StepIcon className="h-4 w-4" weight="duotone" /></span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 sm:h-8 sm:w-8"><StepIcon className="h-[18px] w-[18px]" weight="duotone" /></span>
                 {step.label}
               </span>
+              <span className="ml-auto text-xs tabular-nums text-muted-foreground">{stepIndex + 1}<span className="mx-1 text-muted-foreground/50">/</span>{GUIDE_STEPS.length}</span>
               <button
                 type="button"
                 onClick={() => closeGuide()}
-                className="app-press -mr-2 -mt-2 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="app-press -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:-mt-2 sm:h-8 sm:w-8"
                 aria-label="退出向导"
               >
                 <IconClose className="h-4 w-4" />
               </button>
             </div>
 
+            <div className="mt-3 flex shrink-0 gap-1.5" role="progressbar" aria-label="导览进度" aria-valuemin={0} aria-valuemax={GUIDE_STEPS.length} aria-valuenow={stepIndex + 1} aria-valuetext={`${step.label}，第 ${stepIndex + 1} 步，共 ${GUIDE_STEPS.length} 步`}>
+              {GUIDE_STEPS.map((item, index) => <span key={item.id} className={`h-1 flex-1 rounded-full transition-colors motion-reduce:transition-none ${index <= stepIndex ? 'bg-primary' : 'bg-primary/15'}`} />)}
+            </div>
+
+            <div className="min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]" aria-live="polite" aria-atomic="true">
             <h2 id="onboarding-title" className="mt-4 text-xl font-semibold leading-snug tracking-tight text-foreground">
               {step.title}
             </h2>
-            <p id="onboarding-description" className="mt-2 text-sm leading-7 text-muted-foreground">
-              {step.description}
+            <p id="onboarding-description" className="mt-2 text-[13px] leading-6 text-muted-foreground sm:text-sm sm:leading-7">
+              {isMobileSettings ? '点页眉右上角的设置，调整外观与币种、导出本地备份，或连接自己的 WebDAV 服务。' : step.description}
             </p>
-            <p className="mt-3 text-xs leading-6 text-accent-foreground">
+            <p className="mt-3 rounded-2xl bg-primary/[0.07] px-3 py-2.5 text-xs leading-5 text-accent-foreground sm:rounded-xl">
               {step.hint}
             </p>
+            </div>
 
-            <div className="mt-5 flex items-center gap-3 border-t border-border/50 pt-4">
-              <div className="min-w-8 flex-1" role="progressbar" aria-label="导览进度" aria-valuemin={0} aria-valuemax={GUIDE_STEPS.length} aria-valuenow={stepIndex + 1}>
-                <div className="h-1 overflow-hidden rounded-full bg-primary/15"><div className="h-full rounded-full bg-primary transition-[width] motion-reduce:transition-none" style={{ width: `${(stepIndex + 1) / GUIDE_STEPS.length * 100}%` }} /></div>
-              </div>
-              <span className="text-[11px] tabular-nums text-muted-foreground">{stepIndex + 1} / {GUIDE_STEPS.length}</span>
+            <div className="mt-4 grid shrink-0 grid-cols-2 gap-3 border-t border-border/50 pt-4">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={goBack}
-                disabled={switching || stepIndex === 0}
+                className="h-11 rounded-2xl sm:h-10 sm:rounded-xl"
+                onClick={stepIndex === 0 ? tryQuickEntry : goBack}
+                disabled={switching}
               >
-                上一步
+                {stepIndex === 0 ? '试记一笔' : '上一步'}
               </Button>
-              <Button type="button" size="sm" onClick={advance} disabled={switching}>
+              <Button type="button" size="sm" className="h-11 rounded-2xl sm:h-10 sm:rounded-xl" onClick={advance} disabled={switching}>
                 {isLastStep ? <IconCheckCircle weight="fill" /> : null}
                 {step.action}
                 {!isLastStep ? <IconChevronRight /> : null}

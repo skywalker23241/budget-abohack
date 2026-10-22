@@ -13,7 +13,7 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-7 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-5 flex min-w-0 flex-wrap items-center justify-between gap-3 sm:mb-7 sm:items-end">
       <div className="min-w-0">
         <h1 className="break-words text-2xl font-semibold tracking-[-0.03em] text-foreground sm:text-3xl">
           {title}
@@ -23,7 +23,7 @@ export function PageHeader({
         )}
       </div>
       {actions && (
-        <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 max-sm:[&>button]:h-11 max-sm:[&>button]:rounded-xl">{actions}</div>
       )}
     </div>
   );

@@ -1,0 +1,176 @@
+[
+  {
+    "theme": "light",
+    "states": {
+      "default": {
+        "background": "rgb(144, 208, 177)",
+        "image": "none",
+        "color": "rgb(28, 49, 40)",
+        "contrast": 7.794877143339248,
+        "border": "rgba(144, 208, 177, 0.3)"
+      },
+      "outline": {
+        "background": "rgb(250, 250, 247)",
+        "image": "none",
+        "color": "rgb(26, 26, 26)",
+        "contrast": 16.64361058420964,
+        "border": "rgb(225, 225, 219)"
+      },
+      "secondary": {
+        "background": "rgb(233, 241, 236)",
+        "image": "none",
+        "color": "rgb(48, 80, 66)",
+        "contrast": 7.763414616945179,
+        "border": "rgba(225, 225, 219, 0.6)"
+      },
+      "ghost": {
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none",
+        "color": "rgb(26, 26, 26)",
+        "contrast": 16.547365045175184,
+        "border": "rgba(0, 0, 0, 0)"
+      },
+      "link": {
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none",
+        "color": "rgb(40, 72, 59)",
+        "contrast": 9.597546390421135,
+        "border": "rgba(0, 0, 0, 0)"
+      },
+      "destructive": {
+        "background": "rgb(213, 52, 65)",
+        "image": "none",
+        "color": "rgb(250, 250, 250)",
+        "contrast": 4.57598180799641,
+        "border": "rgba(213, 52, 65, 0.3)"
+      },
+      "selected": {
+        "background": "rgba(144, 208, 177, 0.16)",
+        "image": "none",
+        "color": "rgb(40, 72, 59)",
+        "contrast": 8.399472045154534,
+        "border": "rgba(144, 208, 177, 0.35)"
+      },
+      "unselected": {
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none",
+        "color": "rgb(102, 102, 102)",
+        "contrast": 5.155624999574974,
+        "border": "rgba(0, 0, 0, 0)"
+      },
+      "choice-selected": {
+        "background": "rgba(144, 208, 177, 0.16)",
+        "image": "none",
+        "color": "rgb(40, 72, 59)",
+        "contrast": 8.870079632720191,
+        "border": "rgba(144, 208, 177, 0.35)"
+      },
+      "choice-unselected": {
+        "background": "rgb(250, 250, 247)",
+        "image": "none",
+        "color": "rgb(102, 102, 102)",
+        "contrast": 5.490869455067898,
+        "border": "rgb(225, 225, 219)"
+      }
+    },
+    "dangerConfirm": {
+      "background": "rgb(213, 52, 65)",
+      "image": "none",
+      "color": "rgb(250, 250, 250)",
+      "contrast": 4.57598180799641,
+      "border": "rgba(213, 52, 65, 0.3)"
+    },
+    "consistentPageSelection": true,
+    "quickEntrySelection": true,
+    "cancelPreservesData": true,
+    "keyboardFocus": true,
+    "hover": true
+  },
+  {
+    "theme": "dark",
+    "states": {
+      "default": {
+        "background": "rgb(210, 190, 152)",
+        "image": "none",
+        "color": "rgb(47, 40, 29)",
+        "contrast": 8.015326072610081,
+        "border": "rgba(210, 190, 152, 0.3)"
+      },
+      "outline": {
+        "background": "rgb(37, 42, 41)",
+        "image": "none",
+        "color": "rgb(232, 232, 232)",
+        "contrast": 11.88669685621085,
+        "border": "rgb(61, 66, 65)"
+      },
+      "secondary": {
+        "background": "rgb(56, 53, 46)",
+        "image": "none",
+        "color": "rgb(224, 210, 184)",
+        "contrast": 8.20123507933908,
+        "border": "rgba(61, 66, 65, 0.6)"
+      },
+      "ghost": {
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none",
+        "color": "rgb(232, 232, 232)",
+        "contrast": 13.043301261058632,
+        "border": "rgba(0, 0, 0, 0)"
+      },
+      "link": {
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none",
+        "color": "rgb(224, 210, 184)",
+        "contrast": 10.715459213046287,
+        "border": "rgba(0, 0, 0, 0)"
+      },
+      "destructive": {
+        "background": "rgb(227, 99, 110)",
+        "image": "none",
+        "color": "rgb(52, 9, 13)",
+        "contrast": 5.270027486597167,
+        "border": "rgba(227, 99, 110, 0.3)"
+      },
+      "selected": {
+        "background": "rgba(210, 190, 152, 0.16)",
+        "image": "none",
+        "color": "rgb(224, 210, 184)",
+        "contrast": 6.87744022345589,
+        "border": "rgba(210, 190, 152, 0.35)"
+      },
+      "unselected": {
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none",
+        "color": "rgb(161, 161, 161)",
+        "contrast": 5.711019387662642,
+        "border": "rgba(0, 0, 0, 0)"
+      },
+      "choice-selected": {
+        "background": "rgba(210, 190, 152, 0.16)",
+        "image": "none",
+        "color": "rgb(224, 210, 184)",
+        "contrast": 8.222932083276582,
+        "border": "rgba(210, 190, 152, 0.35)"
+      },
+      "choice-unselected": {
+        "background": "rgb(37, 42, 41)",
+        "image": "none",
+        "color": "rgb(161, 161, 161)",
+        "contrast": 5.63713470914,
+        "border": "rgb(61, 66, 65)"
+      }
+    },
+    "dangerConfirm": {
+      "background": "rgb(227, 99, 110)",
+      "image": "none",
+      "color": "rgb(52, 9, 13)",
+      "contrast": 5.270027486597167,
+      "border": "rgba(227, 99, 110, 0.3)"
+    },
+    "consistentPageSelection": true,
+    "quickEntrySelection": true,
+    "cancelPreservesData": true,
+    "keyboardFocus": true,
+    "hover": true
+  }
+]

@@ -1,0 +1,1037 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PennyPeek 向导可视化验证</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f4f6f3;color:#23372d;font:15px/1.7 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1400px;margin:auto;padding:36px 24px}h1{font-size:32px;margin:0 0 12px}h2{margin:36px 0 16px}h3{margin:0 0 12px;font-size:19px}p{margin:8px 0}a{color:#22634b}header,.note,article,details{background:white;border:1px solid #dbe4dd;border-radius:18px;padding:24px}header p{max-width:950px}.tag{display:inline-block;border-radius:30px;background:#e6f1e8;padding:3px 12px;font-size:12px;margin:0 8px 8px 0}.findings{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}.muted{color:#64766a}.note{border-left:5px solid #c39b44}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}button{font:inherit;border:1px solid #bdd0c2;background:white;border-radius:30px;padding:8px 16px;cursor:pointer}button[aria-pressed=true]{background:#255f47;color:white}.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.shots.phone{grid-template-columns:repeat(3,minmax(0,1fr))}figure{margin:0;min-width:0;background:white;border:1px solid #dbe4dd;border-radius:12px;overflow:hidden}figcaption{padding:12px 16px}img{display:block;width:100%;height:auto}.run[hidden]{display:none}pre{overflow:auto;font-size:12px}summary{cursor:pointer}table{width:100%;border-collapse:collapse;background:white}th,td{text-align:left;padding:12px;border-bottom:1px solid #dbe4dd}@media(max-width:760px){main{padding:20px 12px}.shots,.shots.phone{grid-template-columns:1fr}h1{font-size:26px}}</style>
+<main><header><span class="tag">2026-10-22 · 移动端 UI 优化后</span><span class="tag">Microsoft Edge · 自动化真实页面交互</span><h1>PennyPeek 向导可视化验证</h1><p>欢迎页 + 5 步向导，在桌面、手机、小屏、横屏、深色模式下走查。35 张主流程/试记截图已更新为本轮优化后的界面。新增底部欢迎弹层、分段进度、44px 触控按钮、提示区和小屏自适应高度。</p><p><strong>主流程通过：</strong>25 个步骤卡片均在视口内、无横向溢出、没有遮挡高亮目标。各配置下前进/返回、完成、刷新保持关闭、Esc、试记取消后恢复均正常；没有浏览器运行时异常，导览及取消试记前后账本内容一致。</p><p><a href="mobile-ui-results.json">移动端专项验证结果</a>：320、390、430px，含深色与减少动态效果设置；触控尺寸、按钮可见、键盘试记及 16px 高亮间距均通过。类型检查和生产构建通过。</p><p class="muted">覆盖范围：本地默认示例账本，桌面浏览器模拟视口与系统主题；未覆盖真实 iOS / Android 设备、软键盘、空账本及实际保存一笔后的体验。补充结果 edges.json 与 landscape-fixture.png 为上轮检查证据。</p></header>
+<h2>建议优化 · 按优先级</h2><div class="findings"><article><span class="tag">优先处理</span><h3>高亮按钮的交互规则不一致</h3><p>第一步「记一笔」和最后一步「设置」可点击；「新增预算」「新增目标」虽然同样高亮，点击却被遮挡层拦截。容易让用户以为按钮失灵。</p><p><strong>建议：</strong>给预算、目标也提供打开表单后恢复导览的行为，或明确标注本步仅介绍、结束后操作。</p><a href="mobile-2.png" target="_blank">查看证据截图 ↗</a></article><article><span class="tag">已优化</span><h3>补上键盘试记入口</h3><p>卡片内已增加「试记一笔」，键盘可聚焦并按 Enter 打开表单；关闭后继续第二步。</p><p><strong>建议：</strong>320、390、430px 宽度验证通过。步骤说明使用 aria-live 通知读屏。</p><a href="mobile-1.png" target="_blank">查看证据截图 ↗</a></article><article><span class="tag">优先处理</span><h3>完成后缺少开始记账的落点</h3><p>「完成向导」关闭卡片后仍停留在 /app/goals。当前默认显示示例数据，向导没有解释如何转为自己的账本。</p><p><strong>建议：</strong>结束时提供明确的「开始记账」入口，并说明当前为示例账本；若要清理示例数据，应由用户主动选择并确认。</p><a href="desktop-5.png" target="_blank">查看证据截图 ↗</a></article><article><span class="tag">体验优化</span><h3>「稍后再看」实际保存为已完成</h3><p>点击后 onboarding-version 已被写为 3，刷新不再自动出现；可以从菜单手动重开。</p><p><strong>建议：</strong>若设计意图是不再自动提醒，可改为「跳过导览」；若确实是稍后继续，分别保存跳过、完成及当前步骤。</p><a href="desktop-welcome.png" target="_blank">查看证据截图 ↗</a></article><article><span class="tag">已优化</span><h3>小屏高亮间距与操作区</h3><p>320 × 640 下，报表卡片与高亮金额的间距已从约 0.5px 增至 16px；说明区可以滚动，进度和按钮保持可见。</p><p><strong>建议：</strong>移动端操作按钮及关闭按钮触控区域至少 44px，已检查没有被裁切。</p><a href="small-3.png" target="_blank">查看证据截图 ↗</a></article><article><span class="tag">已优化</span><h3>滚动提示与当前操作保持一致</h3><p>报表提示已改为「先看本月结余，导览结束后可下滑查看消费趋势」。</p><p><strong>建议：</strong>欢迎页采用底部弹层，主次操作纵向排列；三项功能简介等宽排列。</p><a href="mobile-welcome.png" target="_blank">查看证据截图 ↗</a></article><article><span class="tag">文案校准</span><h3>界面出现「本地加密存储」</h3><p>桌面侧栏显示「本地加密存储」，仓库 README 说明浏览器存储不是加密保险箱，数据默认使用 localStorage。</p><p><strong>建议：</strong>统一改成「数据保存在本机」或「本地存储」，与真实能力保持一致。</p><a href="desktop-welcome.png" target="_blank">查看证据截图 ↗</a></article></div>
+<h2>检查结果与限制</h2><table><thead><tr><th>配置</th><th>真实应用五步</th><th>现有独立测试页</th></tr></thead><tbody><tr><td>桌面 · 1440 × 900</td><td>通过</td><td>通过</td></tr><tr><td>手机 · 390 × 844</td><td>通过</td><td>通过</td></tr><tr><td>小屏 · 320 × 640</td><td>通过</td><td>通过</td></tr><tr><td>横屏 · 780 × 480</td><td>通过</td><td>失败：欢迎页超出视口</td></tr><tr><td>深色 · 1440 × 900</td><td>通过</td><td>通过</td></tr></tbody></table>
+<div class="note" style="margin-top:16px"><strong>横屏独立测试页与真实应用需区分。</strong><p>780 × 480 下，现有 /tests/onboarding.browser.html 报「向导超出视口」。补充截图中欢迎卡片底边为 484px，超出 4px；真实应用相同尺寸的欢迎页和五步均在视口内。应检查测试容器及定位上下文，保留这项失败，避免将其当成全通过。<a href="landscape-fixture.png">查看测试页截图</a>。</p><p>尝试补充空账本测试时，自动审批拦截了脚本中的清空操作，原因是可能删除数据；该脚本没有落地或执行。后续检查没有使用清空调用，空账本场景未验证。</p></div>
+<h2>逐步截图</h2><p class="muted">选择配置查看；点击图片打开原始分辨率。</p><div class="filters"><button type="button" data-name="desktop" aria-pressed="true">桌面 · 1440 × 900</button><button type="button" data-name="mobile" aria-pressed="false">手机 · 390 × 844</button><button type="button" data-name="small" aria-pressed="false">小屏 · 320 × 640</button><button type="button" data-name="landscape" aria-pressed="false">横屏 · 780 × 480</button><button type="button" data-name="dark" aria-pressed="false">深色 · 1440 × 900</button></div>
+<section class="run" data-run="desktop" ><div class="shots "><figure><figcaption>欢迎页</figcaption><a href="desktop-welcome.png" target="_blank"><img loading="lazy" src="desktop-welcome.png" alt="桌面 · 1440 × 900 欢迎页"></a></figure><figure><figcaption>1 / 5 日常记账</figcaption><a href="desktop-1.png" target="_blank"><img loading="lazy" src="desktop-1.png" alt="桌面 · 1440 × 900 1 / 5 日常记账"></a></figure><figure><figcaption>2 / 5 分类预算</figcaption><a href="desktop-2.png" target="_blank"><img loading="lazy" src="desktop-2.png" alt="桌面 · 1440 × 900 2 / 5 分类预算"></a></figure><figure><figcaption>3 / 5 收支报表</figcaption><a href="desktop-3.png" target="_blank"><img loading="lazy" src="desktop-3.png" alt="桌面 · 1440 × 900 3 / 5 收支报表"></a></figure><figure><figcaption>4 / 5 储蓄目标</figcaption><a href="desktop-4.png" target="_blank"><img loading="lazy" src="desktop-4.png" alt="桌面 · 1440 × 900 4 / 5 储蓄目标"></a></figure><figure><figcaption>5 / 5 偏好与备份</figcaption><a href="desktop-5.png" target="_blank"><img loading="lazy" src="desktop-5.png" alt="桌面 · 1440 × 900 5 / 5 偏好与备份"></a></figure><figure><figcaption>试记表单</figcaption><a href="desktop-quick-entry.png" target="_blank"><img loading="lazy" src="desktop-quick-entry.png" alt="桌面 · 1440 × 900 试记表单"></a></figure></div></section><section class="run" data-run="mobile" hidden><div class="shots phone"><figure><figcaption>欢迎页</figcaption><a href="mobile-welcome.png" target="_blank"><img loading="lazy" src="mobile-welcome.png" alt="手机 · 390 × 844 欢迎页"></a></figure><figure><figcaption>1 / 5 日常记账</figcaption><a href="mobile-1.png" target="_blank"><img loading="lazy" src="mobile-1.png" alt="手机 · 390 × 844 1 / 5 日常记账"></a></figure><figure><figcaption>2 / 5 分类预算</figcaption><a href="mobile-2.png" target="_blank"><img loading="lazy" src="mobile-2.png" alt="手机 · 390 × 844 2 / 5 分类预算"></a></figure><figure><figcaption>3 / 5 收支报表</figcaption><a href="mobile-3.png" target="_blank"><img loading="lazy" src="mobile-3.png" alt="手机 · 390 × 844 3 / 5 收支报表"></a></figure><figure><figcaption>4 / 5 储蓄目标</figcaption><a href="mobile-4.png" target="_blank"><img loading="lazy" src="mobile-4.png" alt="手机 · 390 × 844 4 / 5 储蓄目标"></a></figure><figure><figcaption>5 / 5 偏好与备份</figcaption><a href="mobile-5.png" target="_blank"><img loading="lazy" src="mobile-5.png" alt="手机 · 390 × 844 5 / 5 偏好与备份"></a></figure><figure><figcaption>试记表单</figcaption><a href="mobile-quick-entry.png" target="_blank"><img loading="lazy" src="mobile-quick-entry.png" alt="手机 · 390 × 844 试记表单"></a></figure></div></section><section class="run" data-run="small" hidden><div class="shots phone"><figure><figcaption>欢迎页</figcaption><a href="small-welcome.png" target="_blank"><img loading="lazy" src="small-welcome.png" alt="小屏 · 320 × 640 欢迎页"></a></figure><figure><figcaption>1 / 5 日常记账</figcaption><a href="small-1.png" target="_blank"><img loading="lazy" src="small-1.png" alt="小屏 · 320 × 640 1 / 5 日常记账"></a></figure><figure><figcaption>2 / 5 分类预算</figcaption><a href="small-2.png" target="_blank"><img loading="lazy" src="small-2.png" alt="小屏 · 320 × 640 2 / 5 分类预算"></a></figure><figure><figcaption>3 / 5 收支报表</figcaption><a href="small-3.png" target="_blank"><img loading="lazy" src="small-3.png" alt="小屏 · 320 × 640 3 / 5 收支报表"></a></figure><figure><figcaption>4 / 5 储蓄目标</figcaption><a href="small-4.png" target="_blank"><img loading="lazy" src="small-4.png" alt="小屏 · 320 × 640 4 / 5 储蓄目标"></a></figure><figure><figcaption>5 / 5 偏好与备份</figcaption><a href="small-5.png" target="_blank"><img loading="lazy" src="small-5.png" alt="小屏 · 320 × 640 5 / 5 偏好与备份"></a></figure><figure><figcaption>试记表单</figcaption><a href="small-quick-entry.png" target="_blank"><img loading="lazy" src="small-quick-entry.png" alt="小屏 · 320 × 640 试记表单"></a></figure></div></section><section class="run" data-run="landscape" hidden><div class="shots "><figure><figcaption>欢迎页</figcaption><a href="landscape-welcome.png" target="_blank"><img loading="lazy" src="landscape-welcome.png" alt="横屏 · 780 × 480 欢迎页"></a></figure><figure><figcaption>1 / 5 日常记账</figcaption><a href="landscape-1.png" target="_blank"><img loading="lazy" src="landscape-1.png" alt="横屏 · 780 × 480 1 / 5 日常记账"></a></figure><figure><figcaption>2 / 5 分类预算</figcaption><a href="landscape-2.png" target="_blank"><img loading="lazy" src="landscape-2.png" alt="横屏 · 780 × 480 2 / 5 分类预算"></a></figure><figure><figcaption>3 / 5 收支报表</figcaption><a href="landscape-3.png" target="_blank"><img loading="lazy" src="landscape-3.png" alt="横屏 · 780 × 480 3 / 5 收支报表"></a></figure><figure><figcaption>4 / 5 储蓄目标</figcaption><a href="landscape-4.png" target="_blank"><img loading="lazy" src="landscape-4.png" alt="横屏 · 780 × 480 4 / 5 储蓄目标"></a></figure><figure><figcaption>5 / 5 偏好与备份</figcaption><a href="landscape-5.png" target="_blank"><img loading="lazy" src="landscape-5.png" alt="横屏 · 780 × 480 5 / 5 偏好与备份"></a></figure><figure><figcaption>试记表单</figcaption><a href="landscape-quick-entry.png" target="_blank"><img loading="lazy" src="landscape-quick-entry.png" alt="横屏 · 780 × 480 试记表单"></a></figure></div></section><section class="run" data-run="dark" hidden><div class="shots "><figure><figcaption>欢迎页</figcaption><a href="dark-welcome.png" target="_blank"><img loading="lazy" src="dark-welcome.png" alt="深色 · 1440 × 900 欢迎页"></a></figure><figure><figcaption>1 / 5 日常记账</figcaption><a href="dark-1.png" target="_blank"><img loading="lazy" src="dark-1.png" alt="深色 · 1440 × 900 1 / 5 日常记账"></a></figure><figure><figcaption>2 / 5 分类预算</figcaption><a href="dark-2.png" target="_blank"><img loading="lazy" src="dark-2.png" alt="深色 · 1440 × 900 2 / 5 分类预算"></a></figure><figure><figcaption>3 / 5 收支报表</figcaption><a href="dark-3.png" target="_blank"><img loading="lazy" src="dark-3.png" alt="深色 · 1440 × 900 3 / 5 收支报表"></a></figure><figure><figcaption>4 / 5 储蓄目标</figcaption><a href="dark-4.png" target="_blank"><img loading="lazy" src="dark-4.png" alt="深色 · 1440 × 900 4 / 5 储蓄目标"></a></figure><figure><figcaption>5 / 5 偏好与备份</figcaption><a href="dark-5.png" target="_blank"><img loading="lazy" src="dark-5.png" alt="深色 · 1440 × 900 5 / 5 偏好与备份"></a></figure><figure><figcaption>试记表单</figcaption><a href="dark-quick-entry.png" target="_blank"><img loading="lazy" src="dark-quick-entry.png" alt="深色 · 1440 × 900 试记表单"></a></figure></div></section>
+<h2>可复核数据</h2><p><a href="results.json">主流程结果 JSON</a> · <a href="edges.json">补充结果 JSON</a> · <a href="run.cjs">主流程检查脚本</a> · <a href="edges.cjs">补充检查脚本</a></p><details><summary>展开完整结果</summary><pre>{
+  &quot;runs&quot;: [
+    {
+      &quot;name&quot;: &quot;desktop&quot;,
+      &quot;width&quot;: 1440,
+      &quot;height&quot;: 900,
+      &quot;errors&quot;: [],
+      &quot;steps&quot;: [
+        {
+          &quot;title&quot;: &quot;从生活里的每一笔开始&quot;,
+          &quot;route&quot;: &quot;/app&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 908,
+            &quot;y&quot;: 25,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 25,
+            &quot;right&quot;: 1292,
+            &quot;bottom&quot;: 355.5,
+            &quot;left&quot;: 908
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 1308,
+            &quot;y&quot;: 25,
+            &quot;width&quot;: 100,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 25,
+            &quot;right&quot;: 1408,
+            &quot;bottom&quot;: 65,
+            &quot;left&quot;: 1308
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;给每一笔钱留好位置&quot;,
+          &quot;route&quot;: &quot;/app/budget&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 893.96875,
+            &quot;y&quot;: 25.09375,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 25.09375,
+            &quot;right&quot;: 1277.96875,
+            &quot;bottom&quot;: 355.59375,
+            &quot;left&quot;: 893.96875
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 1294,
+            &quot;y&quot;: 25,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 25,
+            &quot;right&quot;: 1408,
+            &quot;bottom&quot;: 65,
+            &quot;left&quot;: 1294
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;看清钱花在了哪里&quot;,
+          &quot;route&quot;: &quot;/app/reports&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 492.59375,
+            &quot;y&quot;: 167.03125,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 167.03125,
+            &quot;right&quot;: 876.59375,
+            &quot;bottom&quot;: 497.53125,
+            &quot;left&quot;: 492.59375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 297,
+            &quot;y&quot;: 167,
+            &quot;width&quot;: 179.59375,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 167,
+            &quot;right&quot;: 476.59375,
+            &quot;bottom&quot;: 207,
+            &quot;left&quot;: 297
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;让想要的生活慢慢靠近&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 893.984375,
+            &quot;y&quot;: 24.015625,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 24.015625,
+            &quot;right&quot;: 1277.984375,
+            &quot;bottom&quot;: 354.515625,
+            &quot;left&quot;: 893.984375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 1294,
+            &quot;y&quot;: 24,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 24,
+            &quot;right&quot;: 1408,
+            &quot;bottom&quot;: 64,
+            &quot;left&quot;: 1294
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;账本也需要好好保管&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 121,
+            &quot;y&quot;: 446,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 446,
+            &quot;right&quot;: 505,
+            &quot;bottom&quot;: 776.5,
+            &quot;left&quot;: 121
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 45,
+            &quot;y&quot;: 446,
+            &quot;width&quot;: 60,
+            &quot;height&quot;: 20,
+            &quot;top&quot;: 446,
+            &quot;right&quot;: 105,
+            &quot;bottom&quot;: 466,
+            &quot;left&quot;: 45
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        }
+      ],
+      &quot;backPassed&quot;: true,
+      &quot;completion&quot;: {
+        &quot;route&quot;: &quot;/app/goals&quot;,
+        &quot;version&quot;: &quot;3&quot;
+      },
+      &quot;ledgerUnchanged&quot;: true,
+      &quot;staysClosedAfterReload&quot;: true,
+      &quot;escapePassed&quot;: true,
+      &quot;keyboardFocus&quot;: [
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        }
+      ],
+      &quot;quickEntrySuspends&quot;: true,
+      &quot;quickEntryResumes&quot;: true,
+      &quot;cancelLedgerUnchanged&quot;: true,
+      &quot;fixture&quot;: &quot;PASS：欢迎、五步导览、上一步、完成、跳过、重开、Esc、试记后恢复、仅保存导览状态&quot;
+    },
+    {
+      &quot;name&quot;: &quot;mobile&quot;,
+      &quot;width&quot;: 390,
+      &quot;height&quot;: 844,
+      &quot;errors&quot;: [],
+      &quot;steps&quot;: [
+        {
+          &quot;title&quot;: &quot;从生活里的每一笔开始&quot;,
+          &quot;route&quot;: &quot;/app&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 412,
+            &quot;width&quot;: 366,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 412,
+            &quot;right&quot;: 378,
+            &quot;bottom&quot;: 742.5,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 170.984375,
+            &quot;y&quot;: 758.5,
+            &quot;width&quot;: 48,
+            &quot;height&quot;: 48,
+            &quot;top&quot;: 758.5,
+            &quot;right&quot;: 218.984375,
+            &quot;bottom&quot;: 806.5,
+            &quot;left&quot;: 170.984375
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;给每一笔钱留好位置&quot;,
+          &quot;route&quot;: &quot;/app/budget&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 244.015625,
+            &quot;width&quot;: 366,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 244.015625,
+            &quot;right&quot;: 378,
+            &quot;bottom&quot;: 574.515625,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 16,
+            &quot;y&quot;: 188,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 188,
+            &quot;right&quot;: 130,
+            &quot;bottom&quot;: 228,
+            &quot;left&quot;: 16
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;看清钱花在了哪里&quot;,
+          &quot;route&quot;: &quot;/app/reports&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 329,
+            &quot;width&quot;: 366,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 329,
+            &quot;right&quot;: 378,
+            &quot;bottom&quot;: 659.5,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 37,
+            &quot;y&quot;: 277,
+            &quot;width&quot;: 149.65625,
+            &quot;height&quot;: 36,
+            &quot;top&quot;: 277,
+            &quot;right&quot;: 186.65625,
+            &quot;bottom&quot;: 313,
+            &quot;left&quot;: 37
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;让想要的生活慢慢靠近&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 194.015625,
+            &quot;width&quot;: 366,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 194.015625,
+            &quot;right&quot;: 378,
+            &quot;bottom&quot;: 524.515625,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 16,
+            &quot;y&quot;: 138,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 138,
+            &quot;right&quot;: 130,
+            &quot;bottom&quot;: 178,
+            &quot;left&quot;: 16
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;账本也需要好好保管&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 428,
+            &quot;width&quot;: 366,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 428,
+            &quot;right&quot;: 378,
+            &quot;bottom&quot;: 758.5,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 302.59375,
+            &quot;y&quot;: 774.5,
+            &quot;width&quot;: 66.40625,
+            &quot;height&quot;: 52.5,
+            &quot;top&quot;: 774.5,
+            &quot;right&quot;: 369,
+            &quot;bottom&quot;: 827,
+            &quot;left&quot;: 302.59375
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        }
+      ],
+      &quot;backPassed&quot;: true,
+      &quot;completion&quot;: {
+        &quot;route&quot;: &quot;/app/goals&quot;,
+        &quot;version&quot;: &quot;3&quot;
+      },
+      &quot;ledgerUnchanged&quot;: true,
+      &quot;staysClosedAfterReload&quot;: true,
+      &quot;escapePassed&quot;: true,
+      &quot;keyboardFocus&quot;: [
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        }
+      ],
+      &quot;quickEntrySuspends&quot;: true,
+      &quot;quickEntryResumes&quot;: true,
+      &quot;cancelLedgerUnchanged&quot;: true,
+      &quot;fixture&quot;: &quot;PASS：欢迎、五步导览、上一步、完成、跳过、重开、Esc、试记后恢复、仅保存导览状态&quot;
+    },
+    {
+      &quot;name&quot;: &quot;small&quot;,
+      &quot;width&quot;: 320,
+      &quot;height&quot;: 640,
+      &quot;errors&quot;: [],
+      &quot;steps&quot;: [
+        {
+          &quot;title&quot;: &quot;从生活里的每一笔开始&quot;,
+          &quot;route&quot;: &quot;/app&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 208,
+            &quot;width&quot;: 296,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 208,
+            &quot;right&quot;: 308,
+            &quot;bottom&quot;: 538.5,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 135.984375,
+            &quot;y&quot;: 554.5,
+            &quot;width&quot;: 48,
+            &quot;height&quot;: 48,
+            &quot;top&quot;: 554.5,
+            &quot;right&quot;: 183.984375,
+            &quot;bottom&quot;: 602.5,
+            &quot;left&quot;: 135.984375
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;给每一笔钱留好位置&quot;,
+          &quot;route&quot;: &quot;/app/budget&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 244.015625,
+            &quot;width&quot;: 296,
+            &quot;height&quot;: 350.5,
+            &quot;top&quot;: 244.015625,
+            &quot;right&quot;: 308,
+            &quot;bottom&quot;: 594.515625,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 138,
+            &quot;y&quot;: 188,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 188,
+            &quot;right&quot;: 252,
+            &quot;bottom&quot;: 228,
+            &quot;left&quot;: 138
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;看清钱花在了哪里&quot;,
+          &quot;route&quot;: &quot;/app/reports&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 329,
+            &quot;width&quot;: 296,
+            &quot;height&quot;: 298.984375,
+            &quot;top&quot;: 329,
+            &quot;right&quot;: 308,
+            &quot;bottom&quot;: 627.984375,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 37,
+            &quot;y&quot;: 277,
+            &quot;width&quot;: 149.65625,
+            &quot;height&quot;: 36,
+            &quot;top&quot;: 277,
+            &quot;right&quot;: 186.65625,
+            &quot;bottom&quot;: 313,
+            &quot;left&quot;: 37
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;让想要的生活慢慢靠近&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 194,
+            &quot;width&quot;: 296,
+            &quot;height&quot;: 350.5,
+            &quot;top&quot;: 194,
+            &quot;right&quot;: 308,
+            &quot;bottom&quot;: 544.5,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 16,
+            &quot;y&quot;: 138,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 138,
+            &quot;right&quot;: 130,
+            &quot;bottom&quot;: 178,
+            &quot;left&quot;: 16
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;账本也需要好好保管&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 12,
+            &quot;y&quot;: 204,
+            &quot;width&quot;: 296,
+            &quot;height&quot;: 350.5,
+            &quot;top&quot;: 204,
+            &quot;right&quot;: 308,
+            &quot;bottom&quot;: 554.5,
+            &quot;left&quot;: 12
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 246.59375,
+            &quot;y&quot;: 570.5,
+            &quot;width&quot;: 52.40625,
+            &quot;height&quot;: 52.5,
+            &quot;top&quot;: 570.5,
+            &quot;right&quot;: 299,
+            &quot;bottom&quot;: 623,
+            &quot;left&quot;: 246.59375
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        }
+      ],
+      &quot;backPassed&quot;: true,
+      &quot;completion&quot;: {
+        &quot;route&quot;: &quot;/app/goals&quot;,
+        &quot;version&quot;: &quot;3&quot;
+      },
+      &quot;ledgerUnchanged&quot;: true,
+      &quot;staysClosedAfterReload&quot;: true,
+      &quot;escapePassed&quot;: true,
+      &quot;keyboardFocus&quot;: [
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        }
+      ],
+      &quot;quickEntrySuspends&quot;: true,
+      &quot;quickEntryResumes&quot;: true,
+      &quot;cancelLedgerUnchanged&quot;: true,
+      &quot;fixture&quot;: &quot;PASS：欢迎、五步导览、上一步、完成、跳过、重开、Esc、试记后恢复、仅保存导览状态&quot;
+    },
+    {
+      &quot;name&quot;: &quot;landscape&quot;,
+      &quot;width&quot;: 780,
+      &quot;height&quot;: 480,
+      &quot;errors&quot;: [],
+      &quot;steps&quot;: [
+        {
+          &quot;title&quot;: &quot;从生活里的每一笔开始&quot;,
+          &quot;route&quot;: &quot;/app&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 197.984375,
+            &quot;y&quot;: 48,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 48,
+            &quot;right&quot;: 581.984375,
+            &quot;bottom&quot;: 378.5,
+            &quot;left&quot;: 197.984375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 365.984375,
+            &quot;y&quot;: 394.5,
+            &quot;width&quot;: 48,
+            &quot;height&quot;: 48,
+            &quot;top&quot;: 394.5,
+            &quot;right&quot;: 413.984375,
+            &quot;bottom&quot;: 442.5,
+            &quot;left&quot;: 365.984375
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;给每一笔钱留好位置&quot;,
+          &quot;route&quot;: &quot;/app/budget&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 241.96875,
+            &quot;y&quot;: 91.109375,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 91.109375,
+            &quot;right&quot;: 625.96875,
+            &quot;bottom&quot;: 421.609375,
+            &quot;left&quot;: 241.96875
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 642,
+            &quot;y&quot;: 91,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 91,
+            &quot;right&quot;: 756,
+            &quot;bottom&quot;: 131,
+            &quot;left&quot;: 642
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;看清钱花在了哪里&quot;,
+          &quot;route&quot;: &quot;/app/reports&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 244.59375,
+            &quot;y&quot;: 137.5,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 137.5,
+            &quot;right&quot;: 628.59375,
+            &quot;bottom&quot;: 468,
+            &quot;left&quot;: 244.59375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 49,
+            &quot;y&quot;: 233,
+            &quot;width&quot;: 179.59375,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 233,
+            &quot;right&quot;: 228.59375,
+            &quot;bottom&quot;: 273,
+            &quot;left&quot;: 49
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;让想要的生活慢慢靠近&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 241.984375,
+            &quot;y&quot;: 90.046875,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 90.046875,
+            &quot;right&quot;: 625.984375,
+            &quot;bottom&quot;: 420.546875,
+            &quot;left&quot;: 241.984375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 642,
+            &quot;y&quot;: 90,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 90,
+            &quot;right&quot;: 756,
+            &quot;bottom&quot;: 130,
+            &quot;left&quot;: 642
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;账本也需要好好保管&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 127.59375,
+            &quot;y&quot;: 137.5,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 137.5,
+            &quot;right&quot;: 511.59375,
+            &quot;bottom&quot;: 468,
+            &quot;left&quot;: 127.59375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 527.59375,
+            &quot;y&quot;: 410.5,
+            &quot;width&quot;: 86.40625,
+            &quot;height&quot;: 52.5,
+            &quot;top&quot;: 410.5,
+            &quot;right&quot;: 614,
+            &quot;bottom&quot;: 463,
+            &quot;left&quot;: 527.59375
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        }
+      ],
+      &quot;backPassed&quot;: true,
+      &quot;completion&quot;: {
+        &quot;route&quot;: &quot;/app/goals&quot;,
+        &quot;version&quot;: &quot;3&quot;
+      },
+      &quot;ledgerUnchanged&quot;: true,
+      &quot;staysClosedAfterReload&quot;: true,
+      &quot;escapePassed&quot;: true,
+      &quot;keyboardFocus&quot;: [
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        }
+      ],
+      &quot;quickEntrySuspends&quot;: true,
+      &quot;quickEntryResumes&quot;: true,
+      &quot;cancelLedgerUnchanged&quot;: true,
+      &quot;fixture&quot;: &quot;FAIL：向导超出视口&quot;
+    },
+    {
+      &quot;name&quot;: &quot;dark&quot;,
+      &quot;width&quot;: 1440,
+      &quot;height&quot;: 900,
+      &quot;errors&quot;: [],
+      &quot;steps&quot;: [
+        {
+          &quot;title&quot;: &quot;从生活里的每一笔开始&quot;,
+          &quot;route&quot;: &quot;/app&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 908,
+            &quot;y&quot;: 25,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 25,
+            &quot;right&quot;: 1292,
+            &quot;bottom&quot;: 355.5,
+            &quot;left&quot;: 908
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 1308,
+            &quot;y&quot;: 25,
+            &quot;width&quot;: 100,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 25,
+            &quot;right&quot;: 1408,
+            &quot;bottom&quot;: 65,
+            &quot;left&quot;: 1308
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;给每一笔钱留好位置&quot;,
+          &quot;route&quot;: &quot;/app/budget&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 893.9375,
+            &quot;y&quot;: 25.15625,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 25.15625,
+            &quot;right&quot;: 1277.9375,
+            &quot;bottom&quot;: 355.65625,
+            &quot;left&quot;: 893.9375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 1294,
+            &quot;y&quot;: 25,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 25,
+            &quot;right&quot;: 1408,
+            &quot;bottom&quot;: 65,
+            &quot;left&quot;: 1294
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;看清钱花在了哪里&quot;,
+          &quot;route&quot;: &quot;/app/reports&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 492.59375,
+            &quot;y&quot;: 167,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 167,
+            &quot;right&quot;: 876.59375,
+            &quot;bottom&quot;: 497.5,
+            &quot;left&quot;: 492.59375
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 297,
+            &quot;y&quot;: 167,
+            &quot;width&quot;: 179.59375,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 167,
+            &quot;right&quot;: 476.59375,
+            &quot;bottom&quot;: 207,
+            &quot;left&quot;: 297
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;让想要的生活慢慢靠近&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 893.96875,
+            &quot;y&quot;: 24.046875,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 24.046875,
+            &quot;right&quot;: 1277.96875,
+            &quot;bottom&quot;: 354.546875,
+            &quot;left&quot;: 893.96875
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 1294,
+            &quot;y&quot;: 24,
+            &quot;width&quot;: 114,
+            &quot;height&quot;: 40,
+            &quot;top&quot;: 24,
+            &quot;right&quot;: 1408,
+            &quot;bottom&quot;: 64,
+            &quot;left&quot;: 1294
+          },
+          &quot;targetClickable&quot;: false,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        },
+        {
+          &quot;title&quot;: &quot;账本也需要好好保管&quot;,
+          &quot;route&quot;: &quot;/app/goals&quot;,
+          &quot;card&quot;: {
+            &quot;x&quot;: 121,
+            &quot;y&quot;: 446,
+            &quot;width&quot;: 384,
+            &quot;height&quot;: 330.5,
+            &quot;top&quot;: 446,
+            &quot;right&quot;: 505,
+            &quot;bottom&quot;: 776.5,
+            &quot;left&quot;: 121
+          },
+          &quot;target&quot;: {
+            &quot;x&quot;: 45,
+            &quot;y&quot;: 446,
+            &quot;width&quot;: 60,
+            &quot;height&quot;: 20,
+            &quot;top&quot;: 446,
+            &quot;right&quot;: 105,
+            &quot;bottom&quot;: 466,
+            &quot;left&quot;: 45
+          },
+          &quot;targetClickable&quot;: true,
+          &quot;overflow&quot;: false,
+          &quot;cardScroll&quot;: false,
+          &quot;inBounds&quot;: true,
+          &quot;overlap&quot;: 0
+        }
+      ],
+      &quot;backPassed&quot;: true,
+      &quot;completion&quot;: {
+        &quot;route&quot;: &quot;/app/goals&quot;,
+        &quot;version&quot;: &quot;3&quot;
+      },
+      &quot;ledgerUnchanged&quot;: true,
+      &quot;staysClosedAfterReload&quot;: true,
+      &quot;escapePassed&quot;: true,
+      &quot;keyboardFocus&quot;: [
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;&quot;,
+          &quot;label&quot;: &quot;退出向导&quot;
+        },
+        {
+          &quot;text&quot;: &quot;试记一笔&quot;,
+          &quot;label&quot;: null
+        },
+        {
+          &quot;text&quot;: &quot;下一步&quot;,
+          &quot;label&quot;: null
+        }
+      ],
+      &quot;quickEntrySuspends&quot;: true,
+      &quot;quickEntryResumes&quot;: true,
+      &quot;cancelLedgerUnchanged&quot;: true,
+      &quot;fixture&quot;: &quot;PASS：欢迎、五步导览、上一步、完成、跳过、重开、Esc、试记后恢复、仅保存导览状态&quot;
+    }
+  ],
+  &quot;edges&quot;: {
+    &quot;laterPersistsCompletion&quot;: &quot;3&quot;,
+    &quot;menuRestart&quot;: true,
+    &quot;browserBack&quot;: {
+      &quot;route&quot;: &quot;/app/budget&quot;,
+      &quot;title&quot;: &quot;给每一笔钱留好位置&quot;,
+      &quot;progress&quot;: &quot;2&quot;,
+      &quot;budgetTarget&quot;: true
+    },
+    &quot;settingsTargetOpens&quot;: true,
+    &quot;guideClosedForSettings&quot;: true,
+    &quot;landscapeFixture&quot;: &quot;FAIL：向导超出视口&quot;,
+    &quot;fixtureGeometry&quot;: {
+      &quot;rect&quot;: {
+        &quot;x&quot;: 166,
+        &quot;y&quot;: 28,
+        &quot;width&quot;: 448,
+        &quot;height&quot;: 456,
+        &quot;top&quot;: 28,
+        &quot;right&quot;: 614,
+        &quot;bottom&quot;: 484,
+        &quot;left&quot;: 166
+      },
+      &quot;style&quot;: &quot;left: 50%; top: 50%; width: min(28rem, -1.5rem + 100vw); transform: translate(-50%, -50%);&quot;,
+      &quot;scrollHeight&quot;: 457,
+      &quot;clientHeight&quot;: 454,
+      &quot;title&quot;: &quot;把钱花明白，从这里开始。&quot;
+    }
+  }
+}</pre></details></main>
+<script>document.querySelectorAll('[data-name]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));document.querySelectorAll('[data-run]').forEach(s=>s.hidden=s.dataset.run!==button.dataset.name)}));</script></html>

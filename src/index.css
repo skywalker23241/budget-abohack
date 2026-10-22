@@ -81,7 +81,7 @@
     --accent-foreground: 39 39% 80%;
 
     --destructive: 355 70% 64%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 355 70% 12%;
 
     --success: 151 55% 58%;
     --success-foreground: 142 80% 10%;
@@ -234,6 +234,48 @@
     color: hsl(var(--accent-foreground));
     background: hsl(var(--primary) / 0.16);
     box-shadow: inset 0 1px 0 var(--glass-highlight);
+  }
+
+  .app-segment {
+    border: 1px solid transparent;
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+    transition: background-color 160ms, border-color 160ms, color 160ms;
+  }
+
+  .app-choice {
+    border-color: hsl(var(--border));
+    background: hsl(var(--card));
+  }
+
+  .app-segment[aria-pressed='true'],
+  .app-segment[data-state='active'] {
+    border-color: hsl(var(--primary) / 0.35);
+    background: hsl(var(--primary) / 0.16);
+    color: hsl(var(--accent-foreground));
+  }
+
+  .app-segment:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  .app-segment:disabled {
+    border-color: hsl(var(--border) / 0.6);
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    opacity: 0.7;
+  }
+
+  @media (hover: hover) {
+    .app-segment:not([aria-pressed='true']):not([data-state='active']):not(:disabled):hover {
+      background: hsl(var(--accent));
+      color: hsl(var(--accent-foreground));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-segment { transition: none; }
   }
 }
 

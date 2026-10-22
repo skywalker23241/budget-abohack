@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { AmountText } from './AmountText';
 
 type SummaryMeta = {
   label: string;
@@ -25,6 +26,7 @@ export function AppSummaryCard({
   accent = 'default',
   action,
   className,
+  children,
 }: {
   eyebrow?: string;
   title: string;
@@ -34,11 +36,12 @@ export function AppSummaryCard({
   accent?: AccentTone;
   action?: ReactNode;
   className?: string;
+  children?: ReactNode;
 }) {
   return (
     <section
       className={cn(
-        'glass-card app-pop app-card-motion relative isolate overflow-hidden rounded-2xl p-5 text-foreground sm:p-6',
+        'glass-card app-pop app-card-motion relative isolate overflow-hidden rounded-3xl p-4 text-foreground sm:p-6',
         className,
       )}
     >
@@ -58,13 +61,13 @@ export function AppSummaryCard({
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           {eyebrow && (
             <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
           )}
           <p className="mt-1 text-sm text-muted-foreground">{title}</p>
-          <div className="mt-2 break-words text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
-            {value}
+          <div className="mt-2 min-w-0 text-3xl font-semibold tracking-[-0.035em] [container-type:inline-size] sm:text-4xl">
+            {typeof value === 'string' ? <AmountText value={value} maxSize={36} /> : value}
           </div>
           {subtitle && (
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
@@ -76,20 +79,21 @@ export function AppSummaryCard({
       </div>
 
       {meta.length > 0 && (
-        <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/50 bg-border/40 sm:grid-cols-3">
-          {meta.map((item) => (
+        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/50 bg-border/40 sm:grid-cols-3">
+          {meta.map((item, index) => (
             <div
               key={item.label}
-              className="app-press min-w-0 bg-card/50 px-3.5 py-3 hover:bg-accent/50"
+              className={cn('min-w-0 bg-card/50 px-3 py-2.5', meta.length % 2 === 1 && index === meta.length - 1 && 'col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:block')}
             >
               <p className="truncate text-xs text-muted-foreground">{item.label}</p>
-              <p className="mt-1 break-words text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
-                {item.value}
-              </p>
+              <div className={cn('mt-1 min-w-0 text-sm font-semibold text-foreground', meta.length % 2 === 1 && index === meta.length - 1 && 'w-1/2 text-right sm:w-full sm:text-left')}>
+                {typeof item.value === 'string' ? <AmountText value={item.value} maxSize={16} /> : item.value}
+              </div>
             </div>
           ))}
         </div>
       )}
+      {children && <div className="mt-3">{children}</div>}
     </section>
   );
 }

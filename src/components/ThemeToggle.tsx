@@ -5,7 +5,6 @@
 import { Sun, Moon, Monitor } from '@/components/Icons';
 import { useTheme, type Theme } from './theme-provider';
 import { Button } from '@/components/ui';
-import { cn } from '@/lib/utils';
 
 const OPTIONS: { value: Theme; label: string; Icon: typeof Sun }[] = [
   { value: 'light', label: '浅色', Icon: Sun },
@@ -45,12 +44,7 @@ export function ThemeSegmented() {
             type="button"
             onClick={() => setTheme(value)}
             aria-pressed={active}
-            className={cn(
-              'inline-flex min-w-0 flex-col items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-1.5 py-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              active
-                ? 'border-primary/70 bg-primary/15 text-accent-foreground'
-                : 'border-border/60 bg-background/40 text-muted-foreground hover:border-primary/40 hover:bg-accent/50 hover:text-accent-foreground',
-            )}
+            className="app-segment app-choice inline-flex min-w-0 flex-col items-center justify-center gap-2 whitespace-nowrap rounded-xl px-1.5 py-3 text-xs font-medium"
           >
             <Icon className="h-4 w-4" />
             {label}

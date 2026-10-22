@@ -47,8 +47,7 @@ export function IconChoices<T extends string>({ label, value, options, onChange,
         const ChoiceIcon = option.icon;
         return (
           <button key={option.value} type="button" aria-pressed={active} disabled={disabled} onClick={() => onChange(option.value)}
-            className={cn('flex min-h-20 min-w-0 flex-col items-center justify-center gap-2 rounded-xl border px-2 py-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
-              active ? 'glass-button border-primary/40 bg-primary/80 text-primary-foreground' : 'glass-button bg-card/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground')}>
+            className="app-segment app-choice flex min-h-20 min-w-0 flex-col items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-medium disabled:cursor-default">
             {ChoiceIcon ? <ChoiceIcon className="h-6 w-6" weight="duotone" aria-hidden="true" /> : <CategoryIcon category={option.label} type={type} className="h-6 w-6" />}
             <span className="max-w-full break-words">{option.label}</span>
           </button>

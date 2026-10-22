@@ -28,9 +28,9 @@ import {
   monthOf,
   todayStr,
   formatMonthLabel,
+  toDateStr,
 } from '@/lib/format';
 import { TRANSACTION_TYPE_LABELS } from '@/lib/constants';
-import { PageHeader } from '@/components/PageHeader';
 import { MonthPicker } from '@/components/MonthPicker';
 import { Card, SectionTitle, Badge, Button, ProgressBar } from '@/components/ui';
 import { CategoryDonut, IncomeExpenseTrend } from '@/components/charts';
@@ -137,21 +137,29 @@ function OverviewMetric({
   value,
   tone = 'default',
   icon,
+  wide = false,
 }: {
   label: string;
   value: string;
   tone?: 'default' | 'income' | 'expense';
   icon: ReactNode;
+  wide?: boolean;
 }) {
   return (
-    <div className="group min-w-0 rounded-xl border border-border/50 bg-card/45 p-3.5 transition-colors hover:bg-accent/50">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+    <div className={cn('group min-w-0 rounded-2xl border border-border/50 bg-card/45 p-3 transition-colors hover:bg-accent/50 md:p-3.5', wide && 'col-span-2 flex items-center justify-between gap-3 md:col-span-1 md:block')}>
+      <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
         <span className="text-muted-foreground">{icon}</span>
         {label}
       </div>
+      <div className={cn('min-w-0 [container-type:inline-size]', wide ? 'w-3/5 md:w-full' : 'mt-2 w-full')}>
       <p
+        data-dashboard-money
+        title={value}
+        style={{ fontSize: `min(1.25rem, ${150 / value.length}cqw)` }}
         className={cn(
-          'mt-2 break-words text-lg font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-xl',
+          'whitespace-nowrap text-right text-sm font-semibold tabular-nums tracking-tight md:text-left',
+          !wide && 'text-left',
+          wide && 'md:mt-2',
           tone === 'income' && 'text-success',
           tone === 'expense' && 'text-destructive',
           tone === 'default' && 'text-foreground',
@@ -159,6 +167,7 @@ function OverviewMetric({
       >
         {value}
       </p>
+      </div>
     </div>
   );
 }
@@ -171,9 +180,9 @@ function DashboardSectionHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+    <div className="mb-3 flex min-w-0 items-center justify-between gap-2 sm:mb-4 sm:items-end">
+      <div className="min-w-0">
+        <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-xl">
           {title}
         </h2>
       </div>
@@ -213,7 +222,7 @@ export function Dashboard() {
     const monthRepayment = transactionsInMonth(transactions, month)
       .filter((t) => t.type === 'loan_repayment')
       .reduce((s, t) => s + t.amount, 0);
-    const loanRatio = loanToIncomeRatio(loans, income);
+    const loanRatio = loanToIncomeRatio(loans.filter((loan) => loan.remainingPrincipal > 0), income);
     const large = findLargeExpenses(transactions, month, settings.largeExpenseThreshold);
     const goalTarget = goals.reduce((sum, goal) => sum + goal.targetAmount, 0);
     const goalSaved = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
@@ -230,7 +239,9 @@ export function Dashboard() {
     }));
 
     // 最近 7 天趋势
-    const days = lastNDays(7);
+    const [year, selectedMonth] = month.split('-').map(Number);
+    const lastDay = new Date(year, selectedMonth, 0).getDate();
+    const days = month === currentMonth() ? lastNDays(7) : Array.from({ length: 7 }, (_, index) => toDateStr(new Date(year, selectedMonth - 1, lastDay - 6 + index)));
     const trend = days.map((d) => {
       const dayTxs = transactions.filter((t) => t.date === d);
       return {
@@ -242,7 +253,7 @@ export function Dashboard() {
       };
     });
 
-    const recent = [...transactions]
+    const recent = [...transactionsInMonth(transactions, month)]
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt.localeCompare(a.createdAt)))
       .slice(0, 10);
 
@@ -289,7 +300,8 @@ export function Dashboard() {
 
   const isCurrentMonth = month === monthOf(todayStr());
   const primaryAmount =
-    data.bSummary.total > 0 ? Math.max(0, data.bSummary.remaining) : data.balance;
+    data.bSummary.total > 0 ? Math.abs(data.bSummary.remaining) : data.balance;
+  const primaryText = formatCurrency(primaryAmount, cur);
   const budgetTone =
     data.bSummary.usageRate >= 1
       ? 'danger'
@@ -311,26 +323,24 @@ export function Dashboard() {
             : '储蓄率未达目标';
 
   return (
-    <>
-      <PageHeader
-        title="财务总览"
-        actions={
-          <>
-            <MonthPicker month={month} onChange={setMonth} />
+    <div className="flex min-w-0 flex-col">
+      <header className="order-1 mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3 md:mb-7">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-3xl">财务总览</h1>
+        <div className="flex min-w-0 items-center gap-2">
+            <MonthPicker month={month} onChange={setMonth} className="gap-0 p-0 [&>span]:min-w-0 [&>span]:px-0 [&>span]:text-xs [&>span>svg]:hidden [&>button]:h-11 [&>button]:w-9 md:gap-1 md:p-1 md:[&>span]:min-w-[6rem] md:[&>span]:text-sm md:[&>span>svg]:block md:[&>button]:h-8 md:[&>button]:w-8" />
             <Button
               data-tour="quick-add"
-              className="shadow-sm"
+              className="hidden shadow-sm md:inline-flex"
               onClick={() => setShowAdd(true)}
             >
               <IconPlus className="h-4 w-4" />
               记一笔
             </Button>
-          </>
-        }
-      />
+        </div>
+      </header>
 
       {/* 第一层：核心财务结论 */}
-      <section className="glass-card relative isolate overflow-hidden rounded-[1.5rem] p-5 text-foreground sm:p-7 lg:p-8">
+      <section data-dashboard-summary className="glass-card relative isolate order-2 overflow-hidden rounded-[1.5rem] p-4 text-foreground [--dashboard-primary-size:2.5rem] sm:p-6 lg:p-8 lg:[--dashboard-primary-size:3.75rem]">
         <div
           className="pointer-events-none absolute inset-0 -z-10 opacity-90"
           aria-hidden="true"
@@ -340,61 +350,75 @@ export function Dashboard() {
           }}
         />
 
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-2 flex min-w-0 items-center justify-between gap-3 lg:mb-8">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,.12)]" />
-            {formatMonthLabel(month)}
+            <span className="hidden lg:inline">{formatMonthLabel(month)}</span>
+            <span className="lg:hidden">{data.bSummary.total > 0 ? data.bSummary.remaining < 0 ? '预算已超支' : '预算还剩' : '收支结余'}</span>
           </div>
-          <span
+          <Link
+            to="/app/budget"
+            data-dashboard-budget-action
+            title={data.bSummary.total > 0 ? statusSummary : '设置分类预算'}
             className={cn(
-              'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
-              data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
+              'inline-flex min-h-8 min-w-0 max-w-[65%] items-center rounded-full border px-2.5 py-1 text-[11px] font-medium lg:text-xs',
+              data.bSummary.total <= 0 ? 'border-border/60 bg-muted/50 text-muted-foreground' : data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
                 ? 'border-rose-400/25 bg-rose-400/10 text-destructive'
                 : savingsOnTrack
                   ? 'border-emerald-400/25 bg-emerald-400/10 text-success'
                   : 'border-amber-400/25 bg-amber-400/10 text-warning',
             )}
           >
-            {data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
+            <span className="truncate lg:hidden">{data.bSummary.total <= 0 ? '去设预算' : data.bSummary.remaining < 0 ? '查看超支' : data.budgetWatch.length > 0 ? statusSummary : '预算内'}</span>
+            <span className="hidden lg:inline">{data.bSummary.total <= 0 ? '未设预算' : data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
               ? '需要关注'
               : savingsOnTrack
                 ? '财务状态良好'
-                : '保持节奏'}
-          </span>
+                : '保持节奏'}</span>
+            <IconChevronRight className="ml-1 h-3 w-3 shrink-0 lg:hidden" />
+          </Link>
         </div>
 
         <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)] xl:items-end">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-muted-foreground">
-              {data.bSummary.total > 0 ? '本月还可支配' : '本月结余'}
+          <div className="min-w-0 [container-type:inline-size]">
+            <p className="hidden text-sm font-medium text-muted-foreground lg:block">
+              {data.bSummary.total > 0 ? data.bSummary.remaining < 0 ? '预算已超支' : '预算还剩' : '收支结余'}
             </p>
-            <p className="mt-2 break-words text-[2.65rem] font-semibold leading-none tracking-[-0.045em] text-foreground [overflow-wrap:anywhere] sm:text-6xl">
-              {formatCurrency(primaryAmount, cur)}
+            <p data-dashboard-money data-dashboard-primary title={primaryText} style={{ fontSize: `min(var(--dashboard-primary-size), ${150 / primaryText.length}cqw)` }} className={cn('mt-2 whitespace-nowrap text-[2.65rem] font-semibold leading-tight tracking-[-0.045em]', data.bSummary.total > 0 && data.bSummary.remaining < 0 || data.bSummary.total <= 0 && data.balance < 0 ? 'text-destructive' : 'text-foreground')}>
+              {primaryText}
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="text-sm text-muted-foreground">{statusSummary}</span>
-              {data.bSummary.total > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="hidden text-sm text-muted-foreground lg:inline">{statusSummary}</span>
+              {data.bSummary.total > 0 && data.bSummary.remaining > 0 && isCurrentMonth && (
                 <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-muted-foreground">
-                  日均可花 {formatCurrency(data.dailyAvailable, cur)}
+                  剩余 {daysRemainingInMonth(month)} 天 · 日均参考 {formatCurrency(data.dailyAvailable, cur)}
                 </span>
               )}
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-3">
+            <div className="mt-4 lg:hidden">
+              {data.bSummary.total > 0 ? <>
+                <div className="mb-2 flex items-center justify-between gap-2 text-xs text-muted-foreground"><span>预算已用 {formatPercent(data.bSummary.usageRate)}</span><Link to="/app/budget" className="inline-flex min-h-8 items-center gap-1 text-accent-foreground">管理预算<IconChevronRight className="h-3 w-3" /></Link></div>
+                <ProgressBar value={data.bSummary.usageRate} tone={budgetTone === 'danger' ? 'rose' : budgetTone === 'warning' ? 'amber' : 'brand'} className="h-1.5" />
+              </> : <Link to="/app/budget" className="flex min-h-11 items-center justify-between gap-2 rounded-xl bg-primary/10 px-3 text-xs text-accent-foreground"><span>设置分类预算，知道每月还能花多少</span><IconChevronRight className="h-4 w-4 shrink-0" /></Link>}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:mt-8 lg:gap-2.5">
               <OverviewMetric
-                label="本月收入"
+                label="收入"
                 value={formatCurrency(data.income, cur)}
                 tone="income"
                 icon={<IconArrowUp className="h-3.5 w-3.5" />}
               />
               <OverviewMetric
-                label="本月支出"
+                label="支出"
                 value={formatCurrency(data.expense, cur)}
                 tone="expense"
                 icon={<IconArrowDown className="h-3.5 w-3.5" />}
               />
               <OverviewMetric
-                label="本月结余"
+                label="收支结余"
+                wide
                 value={formatCurrency(data.balance, cur)}
                 tone={data.balance < 0 ? 'expense' : 'default'}
                 icon={<IconWallet className="h-3.5 w-3.5" />}
@@ -402,7 +426,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-card/40 p-5 backdrop-blur-sm">
+          <div className="hidden rounded-2xl border border-border/50 bg-card/40 p-5 backdrop-blur-sm lg:block">
             <div className="flex items-center gap-5">
               <MetricRing
                 value={data.bSummary.usageRate}
@@ -447,7 +471,7 @@ export function Dashboard() {
       </section>
 
       {/* 第二层：现金流与支出结构 */}
-      <section className="mt-9">
+      <section className="order-5 mt-9 hidden lg:order-3 lg:block">
         <DashboardSectionHeading
           title="现金流与支出结构"
           action={
@@ -463,7 +487,7 @@ export function Dashboard() {
         <div className="grid min-w-0 gap-4 lg:grid-cols-12">
           <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-8">
             <SectionTitle
-              title="最近 7 天收支趋势"
+              title={isCurrentMonth ? '最近 7 天收支趋势' : '月末 7 天收支趋势'}
             />
             <IncomeExpenseTrend data={data.trend} currency={cur} height={286} />
           </Card>
@@ -502,7 +526,7 @@ export function Dashboard() {
       </section>
 
       {/* 第三层：预算、贷款、目标专题 */}
-      <section className="mt-9">
+      <section className="order-6 mt-9 hidden lg:order-4 lg:block">
         <DashboardSectionHeading
           title="预算、贷款与目标"
         />
@@ -630,7 +654,7 @@ export function Dashboard() {
       </section>
 
       {/* 财务健康与提醒作为一个整体，而非三张同质卡片 */}
-      <section className="mt-4 overflow-hidden rounded-2xl border border-border/70 bg-muted/25">
+      <section className="order-7 mt-4 hidden overflow-hidden rounded-2xl border border-border/70 bg-muted/25 lg:order-5 lg:block">
         <div className="grid lg:grid-cols-[0.8fr_1.1fr_1.1fr]">
           <div className="flex items-center gap-4 p-5 sm:p-6">
             <ScoreRing score={data.health.score} />
@@ -661,11 +685,11 @@ export function Dashboard() {
       </section>
 
       {/* 第四层：最近动态 */}
-      <section className="mt-9">
+      <section data-dashboard-recent className="order-4 mt-5 lg:order-6 lg:mt-9">
         <DashboardSectionHeading
-          title={isCurrentMonth ? '最近动态' : '最近动态（全部月份）'}
+          title={isCurrentMonth ? '最近记录' : `${formatMonthLabel(month)}的记录`}
           action={
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="ghost" size="sm" className="h-11 px-2" asChild>
               <Link to="/app/transactions">
                 全部账单
                 <IconChevronRight />
@@ -681,7 +705,8 @@ export function Dashboard() {
                 <IconReceipt className="h-6 w-6" weight="duotone" />
               </span>
               <p className="mt-4 text-sm font-medium text-foreground">还没有收支记录</p>
-              <p className="mt-1 text-sm text-muted-foreground">点击右上角「记一笔」开始记录</p>
+              <p className="mt-1 text-sm text-muted-foreground">{isCurrentMonth ? '从今天的一笔收入或支出开始。' : '这个月还没有记账记录。'}</p>
+              {isCurrentMonth && <Button className="mt-4 h-11 rounded-xl" onClick={() => setShowAdd(true)}><IconPlus />记第一笔</Button>}
             </div>
           ) : (
             <ul className="divide-y divide-border/70">
@@ -690,9 +715,10 @@ export function Dashboard() {
                 return (
                   <li
                     key={t.id}
+                    data-transaction-date={t.date}
                     className={cn(
                       'group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/45 sm:px-5',
-                      index >= 6 && 'hidden md:flex',
+                      index >= 4 && 'hidden lg:flex',
                     )}
                   >
                     <span
@@ -711,20 +737,23 @@ export function Dashboard() {
                           {t.category}
                           {t.note && <span className="text-muted-foreground"> · {t.note}</span>}
                         </p>
-                        <Badge tone="slate">{TRANSACTION_TYPE_LABELS[t.type]}</Badge>
+                        <span className="hidden sm:inline-flex"><Badge tone="slate">{TRANSACTION_TYPE_LABELS[t.type]}</Badge></span>
                       </div>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {t.date} · {t.paymentMethod}
+                        {t.date === todayStr() ? '今天' : t.date} · {t.paymentMethod}
                       </p>
                     </div>
-                    <div className="shrink-0 text-right">
+                    <div className="w-[44%] min-w-0 max-w-[10rem] shrink-0 text-right [container-type:inline-size]">
                       <p
+                        data-dashboard-money
+                        title={`${isIncome ? '+' : t.type === 'transfer' ? '' : '-'}${formatCurrency(t.amount, cur)}`}
+                        style={{ fontSize: `min(1rem, ${150 / (formatCurrency(t.amount, cur).length + 1)}cqw)` }}
                         className={cn(
-                          'text-sm font-semibold tabular-nums sm:text-base',
+                          'whitespace-nowrap text-sm font-semibold tabular-nums',
                           isIncome ? 'text-success' : 'text-foreground',
                         )}
                       >
-                        {isIncome ? '+' : '-'}
+                        {isIncome ? '+' : t.type === 'transfer' ? '' : '-'}
                         {formatCurrency(t.amount, cur)}
                       </p>
                     </div>
@@ -736,7 +765,61 @@ export function Dashboard() {
         </Card>
       </section>
 
+      {isCurrentMonth && data.loanReminders.length > 0 && (
+        <Link to="/app/loans" className="order-3 mt-3 flex min-w-0 items-center gap-3 rounded-2xl border border-warning/20 bg-warning/5 px-4 py-3 lg:hidden">
+          <IconBank className="h-5 w-5 shrink-0 text-warning" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium">{data.loanReminders[0].title}</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">{data.loanReminders[0].description}</p>
+          </div>
+          <IconChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+      )}
+
+      <section data-dashboard-spending className="order-5 mt-5 lg:hidden">
+        <DashboardSectionHeading
+          title="钱花在哪了"
+          action={<Button variant="ghost" size="sm" className="h-11 px-2" asChild><Link to="/app/reports">查看报表<IconChevronRight /></Link></Button>}
+        />
+        <Card className="rounded-2xl p-4">
+          {data.pieData.length ? (
+            <div className="space-y-4">
+              {data.pieData.slice(0, 3).map((item) => {
+                const share = data.expense > 0 ? item.value / data.expense : 0;
+                const amount = formatCurrency(item.value, cur);
+                return (
+                  <div key={item.name} className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted"><CategoryIcon category={item.name} type="expense" /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center justify-between gap-2 text-xs">
+                        <span className="min-w-0 truncate">{item.name}</span>
+                        <span className="shrink-0 text-muted-foreground">{formatPercent(share)}</span>
+                      </div>
+                      <ProgressBar value={share} className="mt-2 h-1" />
+                    </div>
+                    <div className="w-[38%] min-w-0 shrink-0 text-right [container-type:inline-size]">
+                      <p data-dashboard-money title={amount} style={{ fontSize: `min(0.875rem, ${150 / amount.length}cqw)` }} className="whitespace-nowrap text-xs font-medium tabular-nums">{amount}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : <p className="py-4 text-center text-sm text-muted-foreground">这个月暂无支出，记账后会显示分类占比。</p>}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3 text-xs">
+            <span className="text-muted-foreground">储蓄率 · 目标 {settings.savingsRateTarget}%</span>
+            <span className={data.income > 0 ? savingsOnTrack ? 'font-medium text-success' : 'font-medium text-warning' : 'text-muted-foreground'}>{data.income > 0 ? formatPercent(data.rate) : '暂无收入记录'}</span>
+          </div>
+        </Card>
+      </section>
+
+      <section className="order-6 mt-5 lg:hidden">
+        <DashboardSectionHeading title="财务进度" />
+        <div className="grid grid-cols-2 gap-3">
+          {([{ to:'/app/loans',label:'贷款待还',value:formatCurrency(data.loanRemaining,cur),hint:loans.filter(l=>l.remainingPrincipal>0).length+' 笔还款中',Icon:IconBank },{to:'/app/goals',label:'目标已积累',value:formatCurrency(data.goalSaved,cur),hint:goals.length ? formatPercent(data.goalRate)+' 已完成' : '还没有储蓄目标',Icon:IconTarget}]).map(({to,label,value,hint,Icon})=><Link key={to} to={to} className="glass-card min-w-0 rounded-2xl p-3.5 [container-type:inline-size]"><div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Icon className="h-4 w-4" />{label}<IconChevronRight className="ml-auto h-3 w-3" /></div><p data-dashboard-money title={value} style={{fontSize:`min(1.125rem, ${150/value.length}cqw)`}} className="mt-3 whitespace-nowrap text-sm font-semibold tabular-nums">{value}</p><p className="mt-1 text-[11px] text-muted-foreground">{hint}</p></Link>)}
+        </div>
+      </section>
+
       <QuickTransactionModal open={showAdd} onClose={() => setShowAdd(false)} />
-    </>
+    </div>
   );
 }

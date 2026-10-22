@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IconSettings } from '@/components/Icons';
 import {
   Dialog,
@@ -12,8 +12,11 @@ import { Settings } from '@/pages/Settings';
 const SETTINGS_OPEN_EVENT = 'budget-app:settings:open';
 const SETTINGS_CLOSE_EVENT = 'budget-app:settings:close';
 
-export function openSettingsDialog() {
-  window.dispatchEvent(new CustomEvent(SETTINGS_OPEN_EVENT));
+export function openSettingsDialog(event?: { currentTarget: EventTarget | null }) {
+  const returnFocus = event?.currentTarget instanceof HTMLElement
+    ? event.currentTarget
+    : document.activeElement;
+  window.dispatchEvent(new CustomEvent(SETTINGS_OPEN_EVENT, { detail: { returnFocus } }));
 }
 
 export function closeSettingsDialog() {
@@ -22,9 +25,14 @@ export function closeSettingsDialog() {
 
 export function SettingsDialog() {
   const [open, setOpen] = useState(false);
+  const returnFocus = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const handleOpen = () => setOpen(true);
+    const handleOpen = (event: Event) => {
+      const opener = event instanceof CustomEvent ? event.detail?.returnFocus : document.activeElement;
+      returnFocus.current = opener instanceof HTMLElement ? opener : null;
+      setOpen(true);
+    };
     const handleClose = () => setOpen(false);
     window.addEventListener(SETTINGS_OPEN_EVENT, handleOpen);
     window.addEventListener(SETTINGS_CLOSE_EVENT, handleClose);
@@ -36,7 +44,15 @@ export function SettingsDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="grid h-[min(92dvh,50rem)] max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-5xl grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-3xl border-border/60 p-0">
+      <DialogContent
+        className="grid h-[min(92dvh,50rem)] max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-5xl grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-3xl border-border/60 p-0"
+        onCloseAutoFocus={(event) => {
+          // Programmatic openers have no Radix Trigger to restore focus to.
+          if (document.querySelector('[data-onboarding-ui]') || !returnFocus.current?.isConnected) return;
+          event.preventDefault();
+          returnFocus.current.focus({ preventScroll: true });
+        }}
+      >
         <DialogHeader className="border-b border-border/50 px-5 py-4 text-left sm:px-6">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-accent-foreground">

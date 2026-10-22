@@ -50,6 +50,9 @@ import {
 } from '@/components/ui';
 import { CategoryBars, MonthlyTrendLine, CategoryDonut, useChartTheme } from '@/components/charts';
 import { ReminderList } from '@/components/ReminderList';
+import { AmountText } from '@/components/AmountText';
+import { CategoryIcon } from '@/components/CategoryIcon';
+import { cn } from '@/lib/utils';
 import { IconChart, IconArrowUp, IconTrendingUp } from '@/components/Icons';
 
 type Granularity = 'day' | 'week' | 'month';
@@ -57,6 +60,7 @@ type Granularity = 'day' | 'week' | 'month';
 export function Reports() {
   const [month, setMonth] = useState(currentMonth());
   const [gran, setGran] = useState<Granularity>('day');
+  const [mobileTab, setMobileTab] = useState<'category'|'trend'|'alerts'>('category');
 
   const transactions = useStore((s) => s.transactions);
   const budgets = useStore((s) => s.budgets);
@@ -170,14 +174,14 @@ export function Reports() {
     <>
       <PageHeader
         title="报表分析"
-        actions={<MonthPicker month={month} onChange={setMonth} />}
+        actions={<MonthPicker month={month} onChange={setMonth} compact />}
       />
 
       <div data-tour="report-summary">
         <AppSummaryCard
           eyebrow={formatMonthLabel(month)}
-          title={r.balance >= 0 ? '本月结余' : '本月缺口'}
-          value={<span data-tour="report-balance" className="inline-block">{formatCurrency(Math.abs(r.balance), cur)}</span>}
+          title={r.balance >= 0 ? '收支结余' : '收支缺口'}
+          value={<span data-tour="report-balance" className="inline-block max-w-full whitespace-nowrap [font-size:min(2.25rem,7vw)]" style={{fontSize:`min(2.25rem, ${150/formatCurrency(Math.abs(r.balance),cur).length}cqw)`}}>{formatCurrency(Math.abs(r.balance), cur)}</span>}
           subtitle={
             r.maxCat
               ? `最大支出：${r.maxCat.category} · ${formatPercent(
@@ -195,13 +199,17 @@ export function Reports() {
           meta={[
             { label: '收入', value: formatCurrency(r.income, cur) },
             { label: '支出', value: formatCurrency(r.expense, cur) },
-            { label: '储蓄率', value: formatPercent(r.rate) },
+            { label: '储蓄率', value: r.income > 0 ? formatPercent(r.rate) : '暂无收入' },
           ]}
         />
       </div>
 
+      <div role="group" aria-label="报表视图" className="mt-4 flex gap-1 rounded-2xl bg-muted/60 p-1 md:hidden">
+        {([['category','分类'],['trend','趋势'],['alerts','提醒']] as const).map(([value,label])=><button key={value} type="button" aria-pressed={mobileTab===value} onClick={()=>setMobileTab(value)} className="app-segment min-h-11 flex-1 rounded-xl text-sm font-medium">{label}</button>)}
+      </div>
+
       <MobileCollapsibleSection
-        className="mt-4"
+        className="mt-4 hidden md:block"
         title="收支明细"
       >
         {/* 1. 月度收支汇总 */}
@@ -261,11 +269,17 @@ export function Reports() {
 
       {/* 2. 分类支出分析 */}
       <MobileCollapsibleSection
-        className="mt-4"
+        className={cn('mt-4',mobileTab!=='category'&&'hidden md:block')}
         title="分类分析"
+        alwaysOpen
         subtitle={r.maxCat ? `最大支出：${r.maxCat.category}` : undefined}
       >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="md:hidden">
+          <SectionTitle title="支出分类" subtitle={r.byCat.length?`${r.byCat.length} 个分类，按支出排序`:'所选月份暂无支出'} />
+          <div className="space-y-4">{r.byCat.map(item=><div key={item.category} className="flex min-w-0 items-center gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted"><CategoryIcon category={item.category} type="expense"/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.category}</p><p className="mt-1 text-xs text-muted-foreground">{formatPercent(r.catTotal>0?item.amount/r.catTotal:0)}</p></div><AmountText className="w-[44%] shrink-0 text-right" value={formatCurrency(item.amount,cur)} maxSize={16}/></div>)}</div>
+          {r.catTotal>0 && <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/50 pt-3 text-xs"><div className="min-w-0"><p className="mb-1 text-muted-foreground">固定支出 · {formatPercent(r.fixedRatio)}</p><AmountText value={formatCurrency(r.fixed,cur)} maxSize={16}/></div><div className="min-w-0"><p className="mb-1 text-muted-foreground">可变支出 · {formatPercent(r.variableRatio)}</p><AmountText value={formatCurrency(r.variable,cur)} maxSize={16}/></div></div>}
+        </Card>
+        <div className="hidden grid-cols-1 gap-4 md:grid lg:grid-cols-2">
           <Card>
             <SectionTitle title="分类支出排行" />
             <CategoryBars
@@ -283,7 +297,7 @@ export function Reports() {
         </div>
 
         {/* 最大支出 / 增长最快 */}
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mt-4 hidden grid-cols-1 gap-4 md:grid md:grid-cols-2">
           <Card>
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
@@ -334,7 +348,7 @@ export function Reports() {
             {r.life.map((g) => (
               <div
                 key={g.key}
-                className="rounded-xl border p-4 text-center"
+                className="min-w-0 rounded-xl border p-3 text-center"
               >
                 <div
                   className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white"
@@ -342,9 +356,7 @@ export function Reports() {
                 >
                   {g.label}
                 </div>
-                <p className="text-lg font-semibold text-foreground">
-                  {formatCurrency(g.amount, cur)}
-                </p>
+                <AmountText value={formatCurrency(g.amount,cur)} maxSize={18}/>
                 <p className="text-xs text-muted-foreground">
                   {formatPercent(r.lifeTotal > 0 ? g.amount / r.lifeTotal : 0)}
                 </p>
@@ -362,18 +374,19 @@ export function Reports() {
 
       {/* 4. 消费趋势 */}
       <MobileCollapsibleSection
-        className="mt-4"
+        className={cn('mt-4',mobileTab!=='trend'&&'hidden md:block')}
         title="消费趋势"
+        alwaysOpen
       >
         <Card>
           <SectionTitle
             title="消费趋势"
             action={
               <Tabs value={gran} onValueChange={(v) => setGran(v as Granularity)}>
-                <TabsList className="h-9">
-                  <TabsTrigger value="day">日</TabsTrigger>
-                  <TabsTrigger value="week">周</TabsTrigger>
-                  <TabsTrigger value="month">月</TabsTrigger>
+                <TabsList className="h-12">
+                  <TabsTrigger className="h-11 px-3" value="day">日</TabsTrigger>
+                  <TabsTrigger className="h-11 px-3" value="week">周</TabsTrigger>
+                  <TabsTrigger className="h-11 px-3" value="month">月</TabsTrigger>
                 </TabsList>
               </Tabs>
             }
@@ -423,8 +436,9 @@ export function Reports() {
 
       {/* 5. 异常消费提醒 */}
       <MobileCollapsibleSection
-        className="mt-4"
+        className={cn('mt-4',mobileTab!=='alerts'&&'hidden md:block')}
         title="异常消费提醒"
+        alwaysOpen
         subtitle={r.large.length > 0 ? `${r.large.length} 笔大额消费` : '本月消费平稳'}
         defaultOpen={r.large.length > 0 || r.reminders.length > 0}
       >

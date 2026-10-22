@@ -64,13 +64,9 @@ export function SegmentedControl<T extends string>({
           <button
             key={opt.value}
             type="button"
+            aria-pressed={active}
             onClick={() => onChange(opt.value)}
-            className={cn(
-              'rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
-              active
-                ? 'border-transparent bg-primary text-primary-foreground shadow-sm'
-                : 'border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-            )}
+            className="app-segment app-choice min-h-11 rounded-xl px-3 py-1.5 text-sm font-medium"
           >
             {opt.label}
           </button>

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>按钮背景适配检查</title><div id="root"></div>
+<script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {Button,Card} from '/src/components/ui';
+import '/src/index.css';
+document.documentElement.classList.toggle('dark',matchMedia('(prefers-color-scheme: dark)').matches);
+const h=React.createElement;
+createRoot(document.querySelector('#root')).render(h('main',{className:'mx-auto max-w-xl space-y-5 p-5'},
+ h('h1',{className:'text-xl font-semibold'},'按钮背景与状态'),
+ h('p',{className:'text-sm text-muted-foreground'},'主操作、次操作与选中项采用对应主题的底色。'),
+ h(Card,{className:'space-y-3'},...['default','outline','secondary','ghost','link','destructive'].map(variant=>h(Button,{key:variant,variant,className:'h-11 w-full',id:variant},({default:'主操作',outline:'次操作',secondary:'辅助操作',ghost:'轻量操作',link:'文字链接',destructive:'危险操作'})[variant])),h(Button,{disabled:true,className:'h-11 w-full',id:'disabled'},'暂不可用')),
+ h('div',{className:'flex gap-1 rounded-2xl bg-muted/60 p-1'},h('button',{className:'app-segment h-11 flex-1 rounded-xl','aria-pressed':true,id:'selected'},'已选中'),h('button',{className:'app-segment h-11 flex-1 rounded-xl','aria-pressed':false,id:'unselected'},'未选中')),
+ h('div',{className:'grid grid-cols-2 gap-2'},h('button',{className:'app-segment app-choice h-20 rounded-xl','aria-pressed':true,id:'choice-selected'},'分类选中'),h('button',{className:'app-segment app-choice h-20 rounded-xl','aria-pressed':false,id:'choice-unselected'},'分类未选中'))
+));
+</script></html>

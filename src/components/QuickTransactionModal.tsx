@@ -122,15 +122,11 @@ export function QuickTransactionModal({
               <button
                 key={item}
                 type="button"
+                aria-pressed={active}
                 onClick={() => handleTypeChange(item)}
                 className={cn(
-                  'h-10 rounded-md text-sm font-semibold transition-colors',
-                  'app-press',
-                  active
-                    ? item === 'income'
-                      ? 'glass-button bg-success text-success-foreground'
-                      : 'glass-button bg-primary/80 text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-background hover:text-foreground',
+                  'app-segment app-press h-11 rounded-xl text-sm font-semibold',
+                  active && item === 'income' && 'border-success/35 bg-success/10 text-success',
                 )}
               >
                 {item === 'income' ? '收入' : '支出'}

@@ -16,6 +16,7 @@ import { BudgetForm } from '@/components/forms/BudgetForm';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
 import { cn } from '@/lib/utils';
+import { AmountText } from '@/components/AmountText';
 import { IconPlus, IconWallet, IconEdit, IconTrash, IconDownload } from '@/components/Icons';
 
 const STATUS_META = {
@@ -28,7 +29,7 @@ export function BudgetPage() {
   const [month, setMonth] = useState(currentMonth());
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Budget | null>(null);
-  const [showAllMobileBudgets, setShowAllMobileBudgets] = useState(false);
+  const [budgetView, setBudgetView] = useState<'all' | 'watch'>('all');
 
   const budgets = useStore((s) => s.budgets);
   const transactions = useStore((s) => s.transactions);
@@ -54,15 +55,7 @@ export function BudgetPage() {
   );
   const existingCategories = list.map((b) => b.category);
   const riskiestBudget = sorted[0];
-  const mobileBudgetHighlights = useMemo(() => {
-    const risky = sorted.filter((b) => b.status !== 'normal');
-    return risky.length > 0 ? risky : sorted.slice(0, 3);
-  }, [sorted]);
-  const mobileBudgetHighlightIds = new Set(mobileBudgetHighlights.map((b) => b.id));
-  const hiddenMobileBudgetCount = Math.max(
-    0,
-    sorted.length - mobileBudgetHighlights.length,
-  );
+  const watchCount = sorted.filter((b) => b.status !== 'normal').length;
   const summaryAccent =
     summary.usageRate >= 1
       ? 'danger'
@@ -103,28 +96,25 @@ export function BudgetPage() {
       <PageHeader
         title="预算管理"
         actions={
-          <>
-            <MonthPicker month={month} onChange={setMonth} />
-            <Button variant="outline" onClick={handleCopy} title="复制上月预算到本月">
-              <IconDownload className="h-4 w-4" />
-              复制上月
-            </Button>
             <Button data-tour="budget-add" onClick={openAdd}>
               <IconPlus className="h-4 w-4" />
               新增预算
             </Button>
-          </>
         }
       />
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <MonthPicker month={month} onChange={setMonth} compact />
+        <Button variant="ghost" className="h-11 rounded-xl px-2 text-xs" onClick={handleCopy} title="复制上月预算到所选月份"><IconDownload />复制上月</Button>
+      </div>
 
       <AppSummaryCard
         eyebrow={formatMonthLabel(month)}
         title={
           summary.total === 0
-            ? '本月预算'
+            ? '分类预算'
             : summary.remaining >= 0
-              ? '本月还可花'
-              : '本月已超支'
+              ? '预算剩余'
+              : '预算已超支'
         }
         value={
           summary.total === 0
@@ -146,10 +136,12 @@ export function BudgetPage() {
           { label: '已使用', value: formatCurrency(summary.used, cur) },
           { label: '使用率', value: formatPercent(summary.usageRate) },
         ]}
-      />
+      >
+        {summary.total > 0 && <ProgressBar value={summary.usageRate} tone={summary.usageRate >= 1 ? 'rose' : summary.usageRate >= warnRate ? 'amber' : 'brand'} className="h-1.5" />}
+      </AppSummaryCard>
 
       {/* 总览 */}
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="mt-4 hidden grid-cols-2 gap-3 sm:gap-4 lg:grid lg:grid-cols-4">
         <StatCard
           label="本月总预算"
           value={formatCurrency(summary.total, cur)}
@@ -181,7 +173,7 @@ export function BudgetPage() {
 
       {/* 总进度 */}
       {summary.total > 0 && (
-        <Card className="mt-4">
+        <Card className="mt-4 hidden lg:block">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
             <span className="font-medium text-foreground">总预算执行进度</span>
             <span className="break-words text-muted-foreground [overflow-wrap:anywhere]">
@@ -203,6 +195,10 @@ export function BudgetPage() {
 
       {/* 预算列表 */}
       <div className="mt-4">
+        {sorted.length > 0 && <div role="group" aria-label="预算分类筛选" className="mb-3 flex gap-1 rounded-2xl bg-muted/50 p-1 lg:hidden">
+          {([['all', `全部分类 ${sorted.length}`], ['watch', `需关注 ${watchCount}`]] as const).map(([value,label]) => <button key={value} type="button" aria-pressed={budgetView===value} onClick={()=>setBudgetView(value)} className="app-segment min-h-11 flex-1 rounded-xl px-2 text-sm font-medium">{label}</button>)}
+        </div>}
+        {sorted.length>0 && budgetView==='watch' && watchCount===0 && <p className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground lg:hidden">当前没有需要关注的分类</p>}
         {sorted.length === 0 ? (
           <EmptyState
             icon={<IconWallet className="h-6 w-6" />}
@@ -229,9 +225,7 @@ export function BudgetPage() {
                   key={b.id}
                   className={cn(
                     b.status === 'exceeded' && 'ring-1 ring-destructive/30',
-                    !showAllMobileBudgets &&
-                      !mobileBudgetHighlightIds.has(b.id) &&
-                      'hidden md:block',
+                    budgetView === 'watch' && b.status === 'normal' && 'hidden lg:block',
                   )}
                 >
                   <div className="flex min-w-0 items-start justify-between gap-3">
@@ -243,27 +237,20 @@ export function BudgetPage() {
                         </span>
                         <Badge tone={meta.tone}>{meta.label}</Badge>
                       </div>
-                      <p className="mt-1 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
-                        已用 {formatCurrency(b.used, cur)} / 预算{' '}
-                        {formatCurrency(b.amount, cur)}
-                      </p>
                     </div>
                     <div className="flex shrink-0">
                       <button
                         onClick={() => openEdit(b)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        className="flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
                         aria-label="编辑"
                       >
                         <IconEdit className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(b)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        aria-label="删除"
-                      >
-                        <IconTrash className="h-4 w-4" />
-                      </button>
                     </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-4 text-xs">
+                    <div className="min-w-0"><p className="mb-1 text-muted-foreground">已使用</p><AmountText value={formatCurrency(b.used,cur)} maxSize={18}/></div>
+                    <div className="min-w-0"><p className="mb-1 text-muted-foreground">分类预算</p><AmountText value={formatCurrency(b.amount,cur)} maxSize={18}/></div>
                   </div>
                   <div className="mt-3">
                     <ProgressBar value={b.usageRate} tone={meta.bar} />
@@ -276,33 +263,21 @@ export function BudgetPage() {
                         {formatPercent(b.usageRate)}
                       </span>
                       <span
-                        className={
+                        className={cn('flex w-[65%] min-w-0 items-center justify-end gap-2',
                           b.remaining < 0
                             ? 'font-medium text-destructive'
                             : 'text-muted-foreground'
-                        }
+                        )}
                       >
-                        {b.remaining >= 0
-                          ? `剩余 ${formatCurrency(b.remaining, cur)}`
-                          : `超支 ${formatCurrency(-b.remaining, cur)}`}
+                        <span className="shrink-0">{b.remaining >= 0 ? '剩余' : '超支'}</span><AmountText className="min-w-0 flex-1 text-right" value={formatCurrency(Math.abs(b.remaining),cur)} maxSize={14}/>
                       </span>
                     </div>
                   </div>
+                  <details className="mt-1 text-xs text-muted-foreground"><summary className="flex min-h-11 cursor-pointer items-center">管理此分类</summary><Button type="button" variant="ghost" className="h-11 w-full text-destructive" onClick={()=>handleDelete(b)}><IconTrash/>删除预算</Button></details>
                 </Card>
               );
             })}
           </div>
-        )}
-        {sorted.length > 0 && hiddenMobileBudgetCount > 0 && (
-          <Button
-            variant="outline"
-            className="mt-3 w-full md:hidden"
-            onClick={() => setShowAllMobileBudgets((value) => !value)}
-          >
-            {showAllMobileBudgets
-              ? '收起普通分类'
-              : `展开其余 ${hiddenMobileBudgetCount} 个分类`}
-          </Button>
         )}
       </div>
 

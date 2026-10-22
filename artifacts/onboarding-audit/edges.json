@@ -1,0 +1,29 @@
+{
+  "laterPersistsCompletion": "3",
+  "menuRestart": true,
+  "browserBack": {
+    "route": "/app/budget",
+    "title": "给每一笔钱留好位置",
+    "progress": "2",
+    "budgetTarget": true
+  },
+  "settingsTargetOpens": true,
+  "guideClosedForSettings": true,
+  "landscapeFixture": "FAIL：向导超出视口",
+  "fixtureGeometry": {
+    "rect": {
+      "x": 166,
+      "y": 28,
+      "width": 448,
+      "height": 456,
+      "top": 28,
+      "right": 614,
+      "bottom": 484,
+      "left": 166
+    },
+    "style": "left: 50%; top: 50%; width: min(28rem, -1.5rem + 100vw); transform: translate(-50%, -50%);",
+    "scrollHeight": 457,
+    "clientHeight": 454,
+    "title": "把钱花明白，从这里开始。"
+  }
+}

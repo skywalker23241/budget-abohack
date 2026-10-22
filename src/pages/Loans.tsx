@@ -20,10 +20,7 @@ import {
   formatMonthLabel,
   daysUntilRepaymentDay,
 } from '@/lib/format';
-import { PageHeader } from '@/components/PageHeader';
-import { AppSummaryCard } from '@/components/AppSummaryCard';
-import { MobileCollapsibleSection } from '@/components/MobileCollapsibleSection';
-import { Card, StatCard, ProgressBar, Badge, EmptyState, Button } from '@/components/ui';
+import { Card, ProgressBar, EmptyState, Button } from '@/components/ui';
 import { Modal } from '@/components/Modal';
 import { LoanForm } from '@/components/forms/LoanForm';
 import { useConfirm } from '@/components/ConfirmDialog';
@@ -35,6 +32,11 @@ import {
   IconTrash,
   IconCheck,
   IconCalendar,
+  IconCheckCircle,
+  House,
+  Car,
+  IconWallet,
+  ChevronDown,
 } from '@/components/Icons';
 
 export function Loans() {
@@ -49,26 +51,23 @@ export function Loans() {
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Loan | null>(null);
+  const [view, setView] = useState<'active' | 'settled'>('active');
 
   const monthIncome = useMemo(
     () => totalIncome(transactions, currentMonth()),
     [transactions]
   );
-  const totalRemaining = totalRemainingPrincipal(loans);
-  const totalMonthly = totalMonthlyRepayment(loans);
-  const ratio = loanToIncomeRatio(loans, monthIncome);
   const activeLoans = loans.filter((l) => l.remainingPrincipal > 0);
+  const settledLoans = loans.filter((l) => l.remainingPrincipal <= 0);
+  const totalRemaining = totalRemainingPrincipal(activeLoans);
+  const totalMonthly = totalMonthlyRepayment(activeLoans);
+  const ratio = loanToIncomeRatio(activeLoans, monthIncome);
+  const visibleLoans = view === 'active'
+    ? [...activeLoans].sort((a, b) => daysUntilRepaymentDay(a.repaymentDay) - daysUntilRepaymentDay(b.repaymentDay))
+    : settledLoans;
   const nextRepayment = activeLoans
     .map((loan) => ({ loan, days: daysUntilRepaymentDay(loan.repaymentDay) }))
     .sort((a, b) => a.days - b.days)[0];
-  const debtAccent =
-    ratio > 0.4
-      ? 'danger'
-      : ratio > 0.25
-        ? 'warning'
-        : totalRemaining > 0
-          ? 'info'
-          : 'success';
 
   function openAdd() {
     setEditing(null);
@@ -111,65 +110,43 @@ export function Loans() {
 
   return (
     <>
-      <PageHeader
-        title="贷款管理"
-        actions={
-          <Button onClick={openAdd}>
+      <header className="mb-5 flex min-w-0 items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">贷款管理</h1>
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">管理月供，跟进每一期还款</p>
+        </div>
+          <Button onClick={openAdd} className="h-11 shrink-0 rounded-2xl px-3 sm:px-4">
             <IconPlus className="h-4 w-4" />
             新增贷款
           </Button>
-        }
-      />
+      </header>
 
-      <AppSummaryCard
-        eyebrow={formatMonthLabel(currentMonth())}
-        title={totalRemaining > 0 ? '总待还本金' : '贷款状态'}
-        value={totalRemaining > 0 ? formatCurrency(totalRemaining, cur) : '已结清'}
-        subtitle={
-          nextRepayment
-            ? `${nextRepayment.loan.name} · ${
-                nextRepayment.days === 0 ? '今天到期' : `${nextRepayment.days} 天后到期`
-              }`
-            : undefined
-        }
-        accent={debtAccent}
-        meta={[
-          { label: '每月总还款', value: formatCurrency(totalMonthly, cur) },
-          {
-            label: '还款占收入',
-            value: monthIncome > 0 ? formatPercent(ratio) : '待记录收入',
-          },
-          { label: '未结清贷款', value: `${activeLoans.length} 笔` },
-        ]}
-      />
-
-      <MobileCollapsibleSection
-        className="mt-4"
-        title="贷款概览"
-        subtitle={`月还款 ${formatCurrency(totalMonthly, cur)}，未结清 ${activeLoans.length} 笔`}
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-          <StatCard
-            label="总剩余本金"
-            value={formatCurrency(totalRemaining, cur)}
-            icon={<IconBank className="h-4 w-4" />}
-            tone="brand"
-          />
-          <StatCard
-            label="每月总还款"
-            value={formatCurrency(totalMonthly, cur)}
-            tone="expense"
-          />
-          <StatCard
-            label="还款占收入比"
-            value={monthIncome > 0 ? formatPercent(ratio) : '—'}
-            tone={ratio > 0.4 ? 'expense' : ratio > 0 ? 'warning' : 'default'}
-            hint={
-              monthIncome > 0 ? undefined : '本月未记录收入'
-            }
-          />
+      <Card className="relative overflow-hidden rounded-3xl border-primary/15 bg-primary/[0.04]">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-primary/[0.07]" />
+        <div className="relative flex items-center justify-between gap-3">
+          <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><IconCalendar className="h-4 w-4" />每月计划还款</p>
+          <span className="text-[11px] text-muted-foreground">{formatMonthLabel(currentMonth())}</span>
         </div>
-      </MobileCollapsibleSection>
+        <p data-loan-monthly className="relative mt-2 break-words text-[32px] font-semibold leading-tight tracking-[-0.04em] [overflow-wrap:anywhere] sm:text-4xl">{formatCurrency(totalMonthly, cur)}</p>
+        <div className="relative mt-5 grid grid-cols-2 gap-4">
+          <div className="min-w-0 border-r border-border/60 pr-3">
+            <p className="text-xs text-muted-foreground">待还本金</p>
+            <p className="mt-1 break-words text-sm font-semibold tabular-nums [overflow-wrap:anywhere] sm:text-base">{formatCurrency(totalRemaining, cur)}</p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">月供 / 本月收入</p>
+            <p className={`mt-1 text-sm font-semibold sm:text-base ${monthIncome > 0 && ratio > 0.4 ? 'text-destructive' : 'text-foreground'}`}>{monthIncome > 0 ? formatPercent(ratio) : '暂无收入记录'}</p>
+          </div>
+        </div>
+        <div className="relative mt-4 flex min-w-0 items-center gap-2 border-t border-border/60 pt-3 text-xs">
+          {nextRepayment ? <>
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${nextRepayment.days <= 3 ? 'bg-warning' : 'bg-primary'}`} />
+            <span className="shrink-0 text-muted-foreground">最近还款日</span>
+            <span className="min-w-0 flex-1 truncate font-medium">{nextRepayment.loan.name}</span>
+            <span className={`shrink-0 font-medium ${nextRepayment.days <= 3 ? 'text-warning' : 'text-accent-foreground'}`}>{nextRepayment.days === 0 ? '今天' : `${nextRepayment.days} 天后`}</span>
+          </> : <><IconCheckCircle className="h-4 w-4 shrink-0 text-success" /><span className="text-muted-foreground">{loans.length ? '所有贷款均已结清' : '添加贷款后，在这里查看还款计划'}</span></>}
+        </div>
+      </Card>
 
       <div className="mt-4">
         {loans.length === 0 ? (
@@ -185,76 +162,54 @@ export function Loans() {
             }
           />
         ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {loans.map((l) => {
+          <>
+          <div className="mb-4 flex rounded-2xl bg-muted/60 p-1" role="group" aria-label="贷款状态筛选">
+            {([['active', '还款中', activeLoans.length], ['settled', '已结清', settledLoans.length]] as const).map(([value, label, count]) => (
+              <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)} className="app-segment app-press flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-medium">
+                {label}<span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${view === value ? 'bg-primary/10 text-accent-foreground' : 'bg-background/60'}`}>{count}</span>
+              </button>
+            ))}
+          </div>
+          {visibleLoans.length === 0 ? <EmptyState icon={<IconCheckCircle className="h-6 w-6" />} title={view === 'active' ? '当前没有待还贷款' : '还没有已结清的贷款'} description={view === 'active' ? '已结清的贷款可在「已结清」中查看。' : '结清后的贷款会保留在这里，方便回顾。'} /> : <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+            {visibleLoans.map((l) => {
               const progress = loanProgress(l);
               const remPeriods = remainingPeriods(l);
               const days = daysUntilRepaymentDay(l.repaymentDay);
-              const paidOff = l.remainingPrincipal <= 0 || remPeriods <= 0;
+              const paidOff = l.remainingPrincipal <= 0;
               const dueSoon = l.remindEnabled && !paidOff && days <= 3;
+              const LoanIcon = l.type === '房贷' ? House : l.type === '车贷' ? Car : l.type === '消费贷' || l.type === '信用卡分期' ? IconWallet : IconBank;
               return (
-                <Card key={l.id} className={dueSoon ? 'ring-1 ring-warning/30' : ''}>
+                <article key={l.id} aria-label={l.name} data-loan-card>
+                <Card className={`rounded-3xl ${dueSoon ? 'ring-1 ring-warning/30' : ''}`}>
                   <div className="flex min-w-0 items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="min-w-0 break-words font-semibold text-foreground">
-                          {l.name}
-                        </span>
-                        <Badge tone="slate">{l.platform ?? '未设置平台'}</Badge>
-                        <Badge tone="blue">{l.type}</Badge>
-                        {paidOff && <Badge tone="emerald">已结清</Badge>}
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${paidOff ? 'bg-success/10 text-success' : 'bg-primary/10 text-accent-foreground'}`}><LoanIcon className="h-5 w-5" weight="duotone" /></span>
+                      <div className="min-w-0">
+                        <h2 className="break-words text-base font-semibold text-foreground [overflow-wrap:anywhere]">{l.name}</h2>
+                        <p className="mt-1 text-xs text-muted-foreground">{l.platform ?? '未设置平台'}<span className="mx-1.5 text-border">/</span>{l.type}</p>
                       </div>
-                      {!paidOff && (
-                        <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                          <IconCalendar className="h-3.5 w-3.5 shrink-0" />
-                          每月 {l.repaymentDay} 号还款
-                          {dueSoon && (
-                            <span className="font-medium text-warning">
-                              · {days === 0 ? '今天到期' : `还有 ${days} 天`}
-                            </span>
-                          )}
-                        </p>
-                      )}
                     </div>
-                    <div className="flex shrink-0">
                       <button
+                        type="button"
                         onClick={() => openEdit(l)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                        aria-label="编辑"
+                        className="app-press -mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={`编辑${l.name}`}
                       >
                         <IconEdit className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(l)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        aria-label="删除"
-                      >
-                        <IconTrash className="h-4 w-4" />
-                      </button>
-                    </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-1 gap-3 text-sm min-[400px]:grid-cols-2">
+                  <div className="mt-5 grid grid-cols-2 gap-4 rounded-2xl bg-muted/35 px-3.5 py-3">
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">剩余本金</p>
-                      <p className="break-words font-semibold text-foreground [overflow-wrap:anywhere]">
+                      <p className="mt-1 break-words text-sm font-semibold tabular-nums text-foreground [overflow-wrap:anywhere] sm:text-base">
                         {formatCurrency(l.remainingPrincipal, cur)}
                       </p>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">月供</p>
-                      <p className="break-words font-semibold text-foreground [overflow-wrap:anywhere]">
-                        {formatCurrency(l.monthlyPayment, cur)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">年利率</p>
-                      <p className="font-medium text-muted-foreground">{l.annualRate}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">预计还清</p>
-                      <p className="font-medium text-muted-foreground">
-                        {formatMonthLabel(payoffMonth(l))}
+                      <p className="text-xs text-muted-foreground">{paidOff ? '贷款状态' : '每月月供'}</p>
+                      <p className={`mt-1 break-words text-sm font-semibold tabular-nums [overflow-wrap:anywhere] sm:text-base ${paidOff ? 'text-success' : 'text-foreground'}`}>
+                        {paidOff ? '已结清' : formatCurrency(l.monthlyPayment, cur)}
                       </p>
                     </div>
                   </div>
@@ -264,28 +219,45 @@ export function Loans() {
                       <span>
                         已还 {l.paidPeriods} / {l.termMonths} 期
                       </span>
-                      <span>剩余 {remPeriods} 期</span>
+                      <span className={paidOff ? 'text-success' : ''}>{paidOff ? '已结清' : `${formatPercent(progress)} 已完成`}</span>
                     </div>
-                    <ProgressBar value={progress} tone={paidOff ? 'emerald' : 'brand'} />
-                    <p className="mt-1 text-right text-xs text-muted-foreground">
-                      {formatPercent(progress)} 已完成
-                    </p>
+                    <ProgressBar value={paidOff ? 1 : progress} tone={paidOff ? 'emerald' : 'brand'} className="h-1.5" />
                   </div>
+
+                  <details className="group mt-2">
+                    <summary className="app-press flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-lg text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                      <span className="flex min-w-0 items-center gap-1.5"><IconCalendar className="h-3.5 w-3.5 shrink-0" />{paidOff ? '查看贷款详情' : `每月 ${l.repaymentDay} 日 · 剩余 ${remPeriods} 期`}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+                    </summary>
+                    <div className="space-y-3 border-t border-border/50 pb-3 pt-3 text-xs">
+                      <dl className="grid grid-cols-2 gap-3">
+                        <div className="min-w-0"><dt className="text-muted-foreground">初始本金</dt><dd className="mt-1 break-words font-medium [overflow-wrap:anywhere]">{formatCurrency(l.principal, cur)}</dd></div>
+                        <div><dt className="text-muted-foreground">年利率</dt><dd className="mt-1 font-medium">{l.annualRate}%</dd></div>
+                        <div><dt className="text-muted-foreground">开始日期</dt><dd className="mt-1 font-medium">{l.startDate}</dd></div>
+                        <div><dt className="text-muted-foreground">预计还清</dt><dd className="mt-1 font-medium">{paidOff ? '已结清' : remPeriods > 0 ? formatMonthLabel(payoffMonth(l)) : '请核对剩余本金'}</dd></div>
+                      </dl>
+                      {l.note && <p className="break-words leading-5 text-muted-foreground [overflow-wrap:anywhere]">备注：{l.note}</p>}
+                      <Button type="button" variant="ghost" className="h-11 w-full rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(l)}><IconTrash className="h-4 w-4" />删除贷款</Button>
+                    </div>
+                  </details>
 
                   {!paidOff && (
                     <Button
-                      variant="outline"
-                      className="mt-4 w-full"
+                      variant={dueSoon ? 'default' : 'outline'}
+                      className="mt-1 h-11 w-full rounded-2xl"
                       onClick={() => handleRepay(l)}
                     >
                       <IconCheck className="h-4 w-4" />
                       记录本期还款
+                      {dueSoon && <span className="text-[11px] opacity-75">· {days === 0 ? '今天还款日' : `${days} 天后还款`}</span>}
                     </Button>
                   )}
                 </Card>
+                </article>
               );
             })}
-          </div>
+          </div>}
+          </>
         )}
       </div>
 

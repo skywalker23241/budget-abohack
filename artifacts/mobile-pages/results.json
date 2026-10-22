@@ -1,0 +1,207 @@
+[
+  {
+    "width": 320,
+    "height": 690,
+    "colorScheme": "light",
+    "route": "transactions",
+    "amountsFit": 14,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 320,
+    "height": 690,
+    "colorScheme": "light",
+    "route": "budget",
+    "amountsFit": 22,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 320,
+    "height": 690,
+    "colorScheme": "light",
+    "route": "income",
+    "amountsFit": 10,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 320,
+    "height": 690,
+    "colorScheme": "light",
+    "route": "reports",
+    "amountsFit": 18,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 320,
+    "height": 690,
+    "colorScheme": "light",
+    "route": "goals",
+    "amountsFit": 12,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "light",
+    "route": "transactions",
+    "amountsFit": 14,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "light",
+    "route": "budget",
+    "amountsFit": 22,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "light",
+    "route": "income",
+    "amountsFit": 10,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "light",
+    "route": "reports",
+    "amountsFit": 18,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "light",
+    "route": "goals",
+    "amountsFit": 12,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "colorScheme": "dark",
+    "route": "transactions",
+    "amountsFit": 14,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "colorScheme": "dark",
+    "route": "budget",
+    "amountsFit": 22,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "colorScheme": "dark",
+    "route": "income",
+    "amountsFit": 10,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "colorScheme": "dark",
+    "route": "reports",
+    "amountsFit": 18,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "colorScheme": "dark",
+    "route": "goals",
+    "amountsFit": 12,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "colorScheme": "light",
+    "route": "transactions",
+    "amountsFit": 33,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "colorScheme": "light",
+    "route": "budget",
+    "amountsFit": 22,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "colorScheme": "light",
+    "route": "income",
+    "amountsFit": 10,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "colorScheme": "light",
+    "route": "reports",
+    "amountsFit": 7,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "colorScheme": "light",
+    "route": "goals",
+    "amountsFit": 12,
+    "interactionsPassed": true,
+    "cancellationPreservesData": true
+  },
+  {
+    "route": "transactions",
+    "largeHKD": true,
+    "amountsFit": true
+  },
+  {
+    "route": "budget",
+    "largeHKD": true,
+    "amountsFit": true
+  },
+  {
+    "route": "income",
+    "largeHKD": true,
+    "amountsFit": true
+  },
+  {
+    "route": "reports",
+    "largeHKD": true,
+    "amountsFit": true
+  },
+  {
+    "route": "goals",
+    "largeHKD": true,
+    "amountsFit": true
+  }
+]

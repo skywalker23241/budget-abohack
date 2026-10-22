@@ -10,10 +10,12 @@ export function MonthPicker({
   month,
   onChange,
   className = '',
+  compact = false,
 }: {
   month: string;
   onChange: (m: string) => void;
   className?: string;
+  compact?: boolean;
 }) {
   const isCurrent = month === currentMonth();
   return (
@@ -21,6 +23,7 @@ export function MonthPicker({
       className={cn(
         'inline-flex items-center gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm',
         className,
+        compact && 'max-sm:gap-0 max-sm:p-0 max-sm:[&>span]:min-w-0 max-sm:[&>span]:px-0 max-sm:[&>span]:text-xs max-sm:[&>span>svg]:hidden max-sm:[&>button]:h-11 max-sm:[&>button]:w-9',
       )}
     >
       <Button

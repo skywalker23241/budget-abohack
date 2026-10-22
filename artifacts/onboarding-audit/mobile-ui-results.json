@@ -1,0 +1,111 @@
+[
+  {
+    "width": 320,
+    "height": 640,
+    "colorScheme": "light",
+    "keyboardTrialPassed": true,
+    "steps": [
+      {
+        "step": 2,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 3,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": true,
+        "targetGap": 16
+      },
+      {
+        "step": 4,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 5,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "colorScheme": "light",
+    "keyboardTrialPassed": true,
+    "steps": [
+      {
+        "step": 2,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 3,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 4,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 5,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      }
+    ]
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "colorScheme": "dark",
+    "keyboardTrialPassed": true,
+    "steps": [
+      {
+        "step": 2,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 3,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 4,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      },
+      {
+        "step": 5,
+        "inBounds": true,
+        "touchTargets": true,
+        "buttonsVisible": true,
+        "contentScroll": false
+      }
+    ]
+  }
+]

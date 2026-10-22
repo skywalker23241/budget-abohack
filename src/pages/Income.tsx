@@ -3,6 +3,7 @@
  */
 import { useMemo, useState } from 'react';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { AmountText } from '@/components/AmountText';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -126,7 +127,8 @@ export function Income() {
   }
 
   return (
-    <>
+    <div className="flex min-w-0 flex-col">
+      <div className="order-1">
       <PageHeader
         title="收入管理"
         actions={
@@ -136,7 +138,9 @@ export function Income() {
           </Button>
         }
       />
+      </div>
 
+      <div className="order-2">
       <AppSummaryCard
         eyebrow={formatMonthLabel(month)}
         title="本月已到账收入"
@@ -153,8 +157,9 @@ export function Income() {
           { label: '收入来源', value: `${incomeSources.length} 个` },
         ]}
       />
+      </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+      <div className="order-3 mt-4 hidden grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid">
         <StatCard
           label={`${formatMonthLabel(month)}总收入`}
           value={formatCurrency(stats.total, cur)}
@@ -171,7 +176,7 @@ export function Income() {
 
       {/* 图表 */}
       <MobileCollapsibleSection
-        className="mt-4"
+        className="order-5 mt-4 lg:order-4"
         title="收入统计"
       >
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -230,10 +235,11 @@ export function Income() {
 
       {/* 收入来源 + 到账记录 */}
       <MobileCollapsibleSection
-        className="mt-4"
+        className="order-4 mt-4 lg:order-5"
         title="收入来源与到账"
         subtitle={`${incomeSources.length} 个来源，最近 ${stats.arrivals.length} 条到账`}
         defaultOpen
+        alwaysOpen
       >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
@@ -255,7 +261,7 @@ export function Income() {
               {incomeSources.map((s) => (
                 <li
                   key={s.id}
-                  className="flex items-center gap-3 rounded-lg border px-3 py-2.5"
+                  className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 rounded-2xl border px-3 py-3"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
                     <CategoryIcon category={s.type} type="income" />
@@ -268,34 +274,34 @@ export function Income() {
                       <Badge tone="brand">{s.type}</Badge>
                       {s.isFixed && <Badge tone="slate">固定</Badge>}
                     </div>
-                    <p className="mt-0.5 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
-                      每月 {s.payday} 号 · {formatCurrency(s.amount, cur)}
-                      {s.note ? ` · ${s.note}` : ''}
-                    </p>
+                    <AmountText className="mt-2 text-success" value={formatCurrency(s.amount,cur)} maxSize={20}/>
+                    <p className="mt-1 text-xs text-muted-foreground">{s.isFixed?`每月 ${s.payday} 日到账`:'非固定收入'}{s.note ? ` · ${s.note}` : ''}</p>
                   </div>
+                  <div className="col-span-2 flex gap-2 border-t border-border/50 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1 px-2.5 text-xs"
+                    className="h-11 min-w-0 flex-1 gap-1 rounded-xl px-2.5 text-xs"
                     onClick={() => handleArrival(s)}
                   >
                     <IconCheck className="h-3.5 w-3.5" />
-                    到账
+                    记录到账
                   </Button>
                   <button
                     onClick={() => openEdit(s)}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
                     aria-label="编辑"
                   >
                     <IconEdit className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(s)}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     aria-label="删除"
                   >
                     <IconTrash className="h-4 w-4" />
                   </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -325,9 +331,7 @@ export function Income() {
                       )}
                     </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-success">
-                    +{formatCurrency(t.amount, cur)}
-                  </span>
+                  <AmountText className="w-[44%] shrink-0 text-right text-success" value={`+${formatCurrency(t.amount,cur)}`} maxSize={16}/>
                 </li>
               ))}
             </ul>
@@ -344,6 +348,6 @@ export function Income() {
       >
         <IncomeForm initial={editing ?? undefined} onClose={() => setShowForm(false)} />
       </Modal>
-    </>
+    </div>
   );
 }
