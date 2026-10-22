@@ -2,6 +2,7 @@
  * 预算管理页面：按月设置分类预算，展示使用进度、超支高亮，支持复制上月预算。
  */
 import { useMemo, useState } from 'react';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import type { Budget, BudgetWithUsage } from '@/types';
 import { useStore } from '@/store/useStore';
 import { budgetsWithUsage, budgetSummary } from '@/lib/calculations';
@@ -101,7 +102,6 @@ export function BudgetPage() {
     <>
       <PageHeader
         title="预算管理"
-        subtitle="为每个分类设置月度预算，控制开销节奏"
         actions={
           <>
             <MonthPicker month={month} onChange={setMonth} />
@@ -133,12 +133,12 @@ export function BudgetPage() {
         }
         subtitle={
           summary.total === 0
-            ? '先添加几个高频分类预算，后续每天打开就能看到消费节奏。'
+            ? undefined
             : riskiestBudget
-              ? `${riskiestBudget.category} 使用率最高，当前为 ${formatPercent(
+              ? `${riskiestBudget.category} · 已用 ${formatPercent(
                   riskiestBudget.usageRate,
-                )}。`
-              : '本月预算节奏稳定。'
+                )}`
+              : undefined
         }
         accent={summaryAccent}
         meta={[
@@ -207,7 +207,7 @@ export function BudgetPage() {
           <EmptyState
             icon={<IconWallet className="h-6 w-6" />}
             title={`${formatMonthLabel(month)} 还没有预算`}
-            description="新增分类预算，或一键复制上月预算开始管理"
+            description="新增预算，或复制上月预算"
             action={
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleCopy}>
@@ -237,6 +237,7 @@ export function BudgetPage() {
                   <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
+                        <CategoryIcon category={b.category} className="h-4 w-4 text-muted-foreground" />
                         <span className="min-w-0 break-words font-medium text-foreground">
                           {b.category}
                         </span>
@@ -309,7 +310,7 @@ export function BudgetPage() {
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? '编辑预算' : '新增预算'}
-        maxWidth="max-w-md"
+        maxWidth="max-w-xl"
       >
         <BudgetForm
           initial={editing ?? undefined}

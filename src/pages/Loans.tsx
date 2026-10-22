@@ -19,7 +19,6 @@ import {
   formatPercent,
   formatMonthLabel,
   daysUntilRepaymentDay,
-  todayStr,
 } from '@/lib/format';
 import { PageHeader } from '@/components/PageHeader';
 import { AppSummaryCard } from '@/components/AppSummaryCard';
@@ -114,7 +113,6 @@ export function Loans() {
     <>
       <PageHeader
         title="贷款管理"
-        subtitle="追踪每笔贷款的还款进度与负担"
         actions={
           <Button onClick={openAdd}>
             <IconPlus className="h-4 w-4" />
@@ -129,12 +127,10 @@ export function Loans() {
         value={totalRemaining > 0 ? formatCurrency(totalRemaining, cur) : '已结清'}
         subtitle={
           nextRepayment
-            ? `最近还款：${nextRepayment.loan.name}，${
+            ? `${nextRepayment.loan.name} · ${
                 nextRepayment.days === 0 ? '今天到期' : `${nextRepayment.days} 天后到期`
-              }。`
-            : loans.length > 0
-              ? '当前贷款都已结清，可以保留历史记录用于复盘。'
-              : '添加花呗、白条、分付、房贷或其他贷款后，这里会展示还款压力。'
+              }`
+            : undefined
         }
         accent={debtAccent}
         meta={[
@@ -169,7 +165,7 @@ export function Loans() {
             value={monthIncome > 0 ? formatPercent(ratio) : '—'}
             tone={ratio > 0.4 ? 'expense' : ratio > 0 ? 'warning' : 'default'}
             hint={
-              monthIncome > 0 ? '建议控制在 40% 以内' : '本月暂无收入记录，无法计算'
+              monthIncome > 0 ? undefined : '本月未记录收入'
             }
           />
         </div>
@@ -180,7 +176,7 @@ export function Loans() {
           <EmptyState
             icon={<IconBank className="h-6 w-6" />}
             title="还没有贷款记录"
-            description="添加你的房贷、车贷或其他贷款，开始追踪还款进度"
+            description="添加房贷、车贷或其他贷款"
             action={
               <Button onClick={openAdd}>
                 <IconPlus className="h-4 w-4" />
@@ -297,12 +293,13 @@ export function Loans() {
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? '编辑贷款' : '新增贷款'}
+        maxWidth="max-w-xl"
       >
         <LoanForm initial={editing ?? undefined} onClose={() => setShowForm(false)} />
       </Modal>
 
       <p className="mt-4 text-center text-xs text-muted-foreground">
-        提示：当前时间 {todayStr()}，还款本金/利息按等额本息近似拆分计算。
+        本金 / 利息按等额本息近似计算
       </p>
     </>
   );

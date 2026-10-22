@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import NumberFlow from '@number-flow/react';
 import { OTPInput, REGEXP_ONLY_DIGITS, type SlotProps } from 'input-otp';
-import { Liveline, type LivelinePoint } from 'liveline';
-import { LevaPanel, useControls, useCreateStore } from 'leva';
 import { Command } from 'cmdk';
 import { Virtuoso } from 'react-virtuoso';
 import {
@@ -23,30 +21,30 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Toaster, toast } from 'sonner';
+import { useToast } from '@/components/Toast';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import {
   ArrowRight,
-  BadgeCheck,
   ChartNoAxesCombined,
-  Check,
   ChevronRight,
   CircleDollarSign,
   Command as CommandIcon,
-  Download,
   Gauge,
   GripVertical,
   LockKeyhole,
-  PiggyBank,
   ReceiptText,
   Search,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   WalletCards,
+  GithubLogo,
+  IconMenu,
+  X,
 } from '@/components/Icons';
-import { Button } from '@/components/ui';
+import { Button, Switch } from '@/components/ui';
+import { IncomeExpenseTrend } from '@/components/charts';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { useTheme } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
 type BudgetCard = {
@@ -74,26 +72,26 @@ const cnyFormat = {
 } satisfies Intl.NumberFormatOptions;
 
 const commandItems = [
-  { label: '记一笔餐饮支出', detail: '自动进入快速记账' },
-  { label: '查看本月预算', detail: '跳转到预算执行面板' },
-  { label: '同步 WebDAV 备份', detail: '比对本机与云端版本后同步' },
-  { label: '导出年度报表', detail: '下载 CSV 与图表摘要' },
-  { label: '检查贷款提醒', detail: '筛出 7 天内到期还款' },
+  { label: '记录日常收支', detail: '打开账本，记下新的一笔', to: '/app/transactions', icon: ReceiptText },
+  { label: '查看本月预算', detail: '看看各分类还剩多少额度', to: '/app/budget', icon: WalletCards },
+  { label: '管理备份与同步', detail: '在设置中连接自己的 WebDAV 服务', to: '/app/settings', icon: ShieldCheck },
+  { label: '查看收支报表', detail: '回顾趋势，了解钱花在了哪里', to: '/app/reports', icon: ChartNoAxesCombined },
+  { label: '检查贷款计划', detail: '查看待还金额和还款记录', to: '/app/loans', icon: CircleDollarSign },
 ];
 
 const featureCards = [
   {
-    title: '本地优先的数据底座',
+    title: '账本留在自己手里',
     copy: '默认保存在浏览器本地，也可通过 WebDAV 同步到坚果云、NAS、Nextcloud 等自己的服务。',
     icon: ShieldCheck,
   },
   {
-    title: '预算和账单同屏判断',
+    title: '花多少，心里有数',
     copy: '把每日可花、分类超支、固定支出和贷款提醒放在同一条工作流里。',
     icon: Gauge,
   },
   {
-    title: '大账单也保持轻快',
+    title: '记录多了，也好查',
     copy: '上百上千条记录仍能快速滚动、搜索和筛选。',
     icon: ReceiptText,
   },
@@ -105,50 +103,6 @@ const initialBudgets: BudgetCard[] = [
   { id: 'traffic', label: '交通', amount: 700, spent: 320, tone: 'bg-amber-500' },
   { id: 'fun', label: '娱乐', amount: 500, spent: 380, tone: 'bg-rose-500' },
 ];
-
-function useLiveBudgetSeries() {
-  const seed = useMemo(() => {
-    const now = Math.floor(Date.now() / 1000);
-    return Array.from({ length: 42 }, (_, index) => {
-      const value =
-        6500 + Math.sin(index / 3) * 420 + Math.cos(index / 6) * 260 + index * 12;
-      return {
-        time: now - (42 - index) * 2,
-        value: Math.round(value),
-      };
-    });
-  }, []);
-
-  const [points, setPoints] = useState<LivelinePoint[]>(seed);
-  const [value, setValue] = useState(seed[seed.length - 1]?.value ?? 6500);
-
-  useEffect(() => {
-    let tick = seed.length;
-    const id = window.setInterval(() => {
-      setPoints((current) => {
-        const last = current[current.length - 1]?.value ?? value;
-        const next = Math.max(
-          5200,
-          Math.min(
-            8600,
-            last + Math.sin(tick / 2.7) * 120 + (Math.random() - 0.48) * 180,
-          ),
-        );
-        const point = {
-          time: Math.floor(Date.now() / 1000),
-          value: Math.round(next),
-        };
-        tick += 1;
-        setValue(point.value);
-        return [...current.slice(-72), point];
-      });
-    }, 1300);
-
-    return () => window.clearInterval(id);
-  }, [seed.length, value]);
-
-  return { points, value };
-}
 
 function AnimatedCurrency({
   value,
@@ -187,111 +141,162 @@ function AnimatedPercent({
   );
 }
 
+const landingLinks = [
+  { href: '#overview', label: '收支总览' },
+  { href: '#workflow', label: '预算管理' },
+  { href: '#performance', label: '更多功能' },
+];
+
+const repositoryUrl = 'https://github.com/skywalker23241/personal-budget-app';
+
 function LandingHeader({ onCommandOpen }: { onCommandOpen: () => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="个人预算记账助手">
-          <img src="/logo.svg" alt="" className="h-9 w-9 rounded-xl shadow-sm" />
-          <div className="leading-tight">
-            <p className="text-sm font-semibold text-foreground">个人预算</p>
-            <p className="text-xs text-muted-foreground">记账助手</p>
-          </div>
+    <header
+      className="glass-panel sticky top-3 z-40 mx-3 mt-3 rounded-[1.4rem] xl:mx-auto xl:max-w-[calc(80rem-3rem)]"
+      onKeyDown={(event) => { if (event.key === 'Escape') setMenuOpen(false); }}
+    >
+      <div className="flex h-16 items-center justify-between gap-3 px-3 sm:px-5">
+        <Link to="/" className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="PennyPeek 首页">
+          <img src="/logo.svg" alt="" className="h-9 w-9 shadow-sm sm:h-10 sm:w-10" />
+          <span className="text-sm font-semibold tracking-tight min-[380px]:text-base sm:text-lg">PennyPeek</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-          <a className="transition-colors hover:text-foreground" href="#overview">
-            总览
-          </a>
-          <a className="transition-colors hover:text-foreground" href="#workflow">
-            工作流
-          </a>
-          <a className="transition-colors hover:text-foreground" href="#performance">
-            性能
-          </a>
+        <nav aria-label="首页导航" className="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
+          {landingLinks.map(({ href, label }) => (
+            <a key={href} className="rounded-lg px-3 py-2 transition-colors hover:bg-primary/10 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={href}>
+              {label}
+            </a>
+          ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onCommandOpen} aria-label="打开命令中心">
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="icon" onClick={onCommandOpen} aria-label="打开命令中心" className="hidden sm:inline-flex">
             <Search className="h-4 w-4" />
           </Button>
-          <ThemeToggle />
-          <Button asChild className="hidden sm:inline-flex">
-            <Link to="/app">
-              进入应用
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+          <ThemeToggle className="hidden min-[380px]:inline-flex" />
+          <Button variant="outline" size="icon" asChild className="hidden lg:inline-flex">
+            <a href={repositoryUrl} target="_blank" rel="noreferrer" aria-label="在 GitHub 查看源码">
+              <GithubLogo />
+            </a>
+          </Button>
+          <Button asChild className="px-3 sm:px-4">
+            <Link to="/app">开始记账<ArrowRight className="hidden sm:block" /></Link>
+          </Button>
+          <Button variant="ghost" size="icon" className="md:hidden" aria-label={menuOpen ? '收起导航' : '展开导航'} aria-expanded={menuOpen} aria-controls="landing-mobile-nav" onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X /> : <IconMenu />}
           </Button>
         </div>
       </div>
+      {menuOpen && (
+        <nav id="landing-mobile-nav" aria-label="移动端首页导航" className="grid gap-1 border-t border-border/50 p-3 md:hidden">
+          {landingLinks.map(({ href, label }) => (
+            <a key={href} href={href} onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-3 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              {label}
+            </a>
+          ))}
+          <button type="button" onClick={() => { setMenuOpen(false); onCommandOpen(); }} className="flex items-center gap-2 rounded-lg px-3 py-3 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Search className="h-4 w-4" />搜索记账操作
+          </button>
+        </nav>
+      )}
     </header>
+  );
+}
+
+function LandingFooter() {
+  const linkClass = 'w-fit rounded-sm text-sm text-white/65 transition-colors hover:text-[#b8ddc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8ddc8]';
+  return (
+    <footer className="mt-8 overflow-hidden bg-[#1e3028] text-[#f5eddf]">
+      <div className="mx-auto max-w-7xl px-6 pt-14 sm:px-8 sm:pt-20 lg:px-8">
+        <div className="grid gap-10 sm:grid-cols-3 lg:grid-cols-[2fr_1fr_1fr_1.25fr] lg:gap-12">
+          <div className="sm:col-span-3 lg:col-span-1">
+            <Link to="/" className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8ddc8]">
+              <img src="/logo.svg" alt="" className="h-12 w-12" />
+              <div>
+                <p className="text-xl font-semibold tracking-tight">PennyPeek</p>
+                <p className="mt-1 text-xs text-white/50">把每一笔，安排明白。</p>
+              </div>
+            </Link>
+            <p className="mt-5 max-w-xs text-sm leading-7 text-white/65">记录日常收支，安排月度预算，照顾好眼前的生活，也慢慢靠近想要的未来。</p>
+            <a href={repositoryUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs text-white/80 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8ddc8]">
+              <GithubLogo className="h-4 w-4" />在 GitHub 查看
+            </a>
+          </div>
+          <nav aria-label="页脚产品介绍" className="flex flex-col gap-3">
+            <h2 className="mb-2 text-xs font-medium text-white/60">了解产品</h2>
+            {landingLinks.map(({ href, label }) => <a key={href} href={href} className={linkClass}>{label}</a>)}
+          </nav>
+          <nav aria-label="页脚应用入口" className="flex flex-col gap-3">
+            <h2 className="mb-2 text-xs font-medium text-white/60">开始使用</h2>
+            <Link to="/app" className={linkClass}>打开账本</Link>
+            <Link to="/app/budget" className={linkClass}>设置预算</Link>
+            <Link to="/app/goals" className={linkClass}>储蓄目标</Link>
+            <a href={`${repositoryUrl}/issues`} target="_blank" rel="noreferrer" className={linkClass}>反馈问题 ↗</a>
+          </nav>
+          <nav aria-label="Abo 的其他站点" className="flex flex-col gap-3">
+            <h2 className="mb-2 text-xs font-medium text-white/60">和生活有关</h2>
+            <a href="https://restcal.abohack.com/" target="_blank" rel="noreferrer" className={linkClass}>休历 · 安排休息 ↗</a>
+            <a href="https://blog.abohack.com/blog/" target="_blank" rel="noreferrer" className={linkClass}>博客 · 记录生活 ↗</a>
+            <a href="https://abohack.com/" target="_blank" rel="noreferrer" className={linkClass}>Abo 的主页 ↗</a>
+          </nav>
+        </div>
+        <div aria-hidden="true" className="select-none pb-8 pt-12 text-[clamp(3rem,12vw,10rem)] font-semibold leading-none tracking-[-0.06em] text-white/[0.06] sm:pt-20">PennyPeek</div>
+        <div className="flex flex-col gap-3 border-t border-white/10 py-6 text-xs leading-6 text-white/45 sm:flex-row sm:items-center sm:justify-between">
+          <p>PennyPeek © {new Date().getFullYear()} Abo Le</p>
+          <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 shrink-0" />默认本地存储，可选 WebDAV 备份与同步。</p>
+        </div>
+      </div>
+    </footer>
   );
 }
 
 function HeroBackdrop() {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.35)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.35)_1px,transparent_1px)] bg-[size:44px_44px]" />
-      <div className="absolute inset-0 bg-background/65" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,var(--ambient-mint),transparent_65%)]" />
     </div>
   );
 }
 
-function HeroChartCard() {
-  const { resolvedTheme } = useTheme();
-  const { points, value } = useLiveBudgetSeries();
-
+function DashboardPreview() {
   return (
-    <div className="rounded-lg border bg-card/95 p-4 shadow-xl shadow-foreground/5 backdrop-blur">
-      <div className="mb-4 flex items-center justify-between border-b pb-3">
-        <div>
-          <p className="text-xs text-muted-foreground">本月现金流</p>
-          <AnimatedCurrency value={value} className="text-2xl font-semibold text-foreground" />
-        </div>
-        <div className="flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs text-success">
-          <span className="h-2 w-2 rounded-full bg-success" />
-          实时更新
-        </div>
+    <div className="glass-card overflow-hidden p-5 sm:p-6">
+      <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-4">
+        <div className="flex items-center gap-2"><img src="/logo.svg" alt="" className="h-7 w-7" /><span className="text-sm font-semibold">财务总览</span></div>
+        <span className="rounded-full bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground">示例账本</span>
       </div>
-      <div className="h-56 overflow-hidden rounded-lg border bg-background">
-        <Liveline
-          data={points}
-          value={value}
-          color="#10b981"
-          theme={resolvedTheme}
-          badge
-          showValue
-          grid
-          fill
-          pulse
-          window={95}
-          formatValue={(v) =>
-            new Intl.NumberFormat('zh-CN', {
-              style: 'currency',
-              currency: 'CNY',
-              maximumFractionDigits: 0,
-            }).format(v)
-          }
-        />
+      <div className="py-6">
+        <p className="text-sm text-muted-foreground">本月还可支配</p>
+        <AnimatedCurrency value={2320} className="mt-2 block text-4xl font-semibold tracking-tight" />
+        <p className="mt-2 text-xs leading-6 text-muted-foreground">总预算 ¥16,000，已经使用 ¥13,680</p>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {initialBudgets.slice(0, 3).map((item) => (
-          <div key={item.id} className="rounded-lg border bg-background p-3">
-            <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground">{item.label}</span>
-              <span className="text-muted-foreground">
-                {Math.round((item.spent / item.amount) * 100)}%
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn('h-full rounded-full', item.tone)}
-                style={{ width: `${Math.min(100, (item.spent / item.amount) * 100)}%` }}
-              />
-            </div>
+      <div className="grid grid-cols-3 gap-2 border-y border-border/40 py-4">
+        {[
+          { label: '本月收入', value: 20500, tone: 'text-success' },
+          { label: '本月支出', value: 13680, tone: 'text-destructive' },
+          { label: '本月结余', value: 6820, tone: 'text-foreground' },
+        ].map(({ label, value, tone }) => (
+          <div key={label} className="min-w-0">
+            <p className="text-[11px] text-muted-foreground">{label}</p>
+            <AnimatedCurrency value={value} className={cn('mt-2 block text-base font-semibold sm:text-lg', tone)} />
           </div>
         ))}
       </div>
+      <div className="pt-5">
+        <div className="mb-3 flex items-center justify-between text-xs"><span className="font-medium">分类预算</span><span className="text-muted-foreground">已用 / 预算</span></div>
+        <div className="space-y-4">
+          {initialBudgets.slice(0, 3).map((item) => (
+            <div key={item.id}>
+              <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+                <span>{item.label}</span><span className="text-muted-foreground">¥{item.spent.toLocaleString('zh-CN')} / ¥{item.amount.toLocaleString('zh-CN')}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className={cn('h-full rounded-full', item.tone)} style={{ width: item.spent / item.amount * 100 + '%' }} /></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mt-5 border-t border-border/40 pt-3 text-[11px] leading-5 text-muted-foreground">预算、收支、分类进度，打开应用就能查看。</p>
     </div>
   );
 }
@@ -308,7 +313,7 @@ function HeroSection({ onCommandOpen }: { onCommandOpen: () => void }) {
             预算、账单、贷款和目标放进同一个节奏里
           </div>
           <h1 className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl lg:text-6xl">
-            个人预算记账助手
+            PennyPeek
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
             每天打开一次，就知道今天还能花多少、哪些分类正在超支、贷款什么时候还、
@@ -317,7 +322,7 @@ function HeroSection({ onCommandOpen }: { onCommandOpen: () => void }) {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
               <Link to="/app">
-                进入预算驾驶舱
+              打开我的账本
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -329,12 +334,12 @@ function HeroSection({ onCommandOpen }: { onCommandOpen: () => void }) {
 
           <div className="mt-8 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-3">
             <div className="rounded-lg border bg-background/85 p-3 shadow-sm backdrop-blur sm:p-4">
-              <p className="text-[11px] text-muted-foreground sm:text-xs">本月剩余</p>
+              <p className="text-[11px] text-muted-foreground sm:text-xs">示例月结余</p>
               <AnimatedCurrency value={6820} className="mt-1 block text-xl font-semibold sm:text-2xl" />
             </div>
             <div className="rounded-lg border bg-background/85 p-3 shadow-sm backdrop-blur sm:p-4">
               <p className="text-[11px] text-muted-foreground sm:text-xs">储蓄率</p>
-              <AnimatedPercent value={28} className="mt-1 block text-xl font-semibold sm:text-2xl" />
+              <AnimatedPercent value={33} className="mt-1 block text-xl font-semibold sm:text-2xl" />
             </div>
             <div className="rounded-lg border bg-background/85 p-3 shadow-sm backdrop-blur sm:p-4">
               <p className="text-[11px] text-muted-foreground sm:text-xs">到期提醒</p>
@@ -344,74 +349,49 @@ function HeroSection({ onCommandOpen }: { onCommandOpen: () => void }) {
         </div>
 
         <div className="hidden lg:block">
-          <HeroChartCard />
+          <DashboardPreview />
         </div>
       </div>
     </section>
   );
 }
 
-function LiveOverview() {
-  const { resolvedTheme } = useTheme();
-  const { points, value } = useLiveBudgetSeries();
-
+function OverviewSection() {
+  const monthlyData = [
+    { label: '5月', income: 18000, expense: 12600 },
+    { label: '6月', income: 19500, expense: 14200 },
+    { label: '7月', income: 18000, expense: 11800 },
+    { label: '8月', income: 21000, expense: 15300 },
+    { label: '9月', income: 19000, expense: 12100 },
+    { label: '10月', income: 20500, expense: 13680 },
+  ];
   return (
-    <section id="overview" className="border-b bg-muted/25 py-14 sm:py-18">
-      <div className="mx-auto grid min-w-0 max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
-        <div className="min-w-0 rounded-lg border bg-card p-5 shadow-sm">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">实时预算余额</p>
-              <AnimatedCurrency value={value} className="mt-1 block text-4xl font-semibold" />
-            </div>
-            <div className="flex items-center gap-2 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
-              <ChartNoAxesCombined className="h-4 w-4" />
-              现金流稳定
-            </div>
-          </div>
-          <div className="h-80 overflow-hidden rounded-lg border bg-background">
-            <Liveline
-              data={points}
-              value={value}
-              color="#0ea5e9"
-              theme={resolvedTheme}
-              window={90}
-              windows={[
-                { label: '30s', secs: 30 },
-                { label: '90s', secs: 90 },
-                { label: '3m', secs: 180 },
-              ]}
-              windowStyle="rounded"
-              showValue
-              valueMomentumColor
-              formatValue={(v) =>
-                new Intl.NumberFormat('zh-CN', {
-                  style: 'currency',
-                  currency: 'CNY',
-                  maximumFractionDigits: 0,
-                }).format(v)
-              }
-            />
-          </div>
+    <section id="overview" className="border-b bg-muted/15 py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 max-w-2xl">
+          <h2 className="text-3xl font-semibold sm:text-4xl">收支的变化，一眼看清。</h2>
+          <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">从每天的一笔记录，到每月的收支复盘。仪表盘和报表会帮你整理这些变化。</p>
         </div>
-
-        <div className="grid content-start gap-4">
-          {[
-            ['收入', 20500, '工资、副业和固定现金流自动分层'],
-            ['支出', 13680, '按预算分类沉淀长期消费画像'],
-            ['可投资结余', 6820, '扣除固定支出后的真实余量'],
-          ].map(([label, value, text]) => (
-            <div key={label} className="rounded-lg border bg-card p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">{label}</p>
-                  <AnimatedCurrency value={Number(value)} className="mt-1 block text-3xl font-semibold" />
-                </div>
-                <CircleDollarSign className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p>
+        <div className="grid items-start gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+          <div className="glass-card min-w-0 p-5 sm:p-6">
+            <div className="mb-6 flex items-start justify-between gap-3">
+              <div><h3 className="text-base font-semibold">近 6 个月收支趋势</h3><p className="mt-1 text-xs leading-6 text-muted-foreground">与应用报表相同的图表 · 示例数据</p></div>
+              <span className="shrink-0 rounded-full bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground">报表预览</span>
             </div>
-          ))}
+            <IncomeExpenseTrend data={monthlyData} currency="CNY" height={280} />
+          </div>
+          <div className="grid gap-4">
+            {[
+              { label: '本月收入', value: 20500, copy: '工资、副业和其他收入，汇总在一起。', tone: 'text-success' },
+              { label: '本月支出', value: 13680, copy: '按分类回看，了解钱花在了哪里。', tone: 'text-destructive' },
+              { label: '本月结余', value: 6820, copy: '本月收入减去支出，看看留下了多少。', tone: 'text-foreground' },
+            ].map(({ label, value, copy, tone }) => (
+              <div key={label} className="glass-card p-5">
+                <div className="flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{label}</p><AnimatedCurrency value={value} className={cn('text-2xl font-semibold', tone)} /></div>
+                <p className="mt-2 text-xs leading-6 text-muted-foreground">{copy}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -422,7 +402,7 @@ function OtpSlot(props: SlotProps) {
   return (
     <div
       className={cn(
-        'relative flex h-12 w-10 items-center justify-center border-y border-r text-xl font-semibold transition-colors first:rounded-l-md first:border-l last:rounded-r-md',
+        'relative flex h-11 w-8 items-center justify-center border-y border-r text-lg font-semibold transition-colors first:rounded-l-md first:border-l last:rounded-r-md sm:h-12 sm:w-10 sm:text-xl',
         props.isActive
           ? 'border-foreground bg-background shadow-[0_0_0_3px_hsl(var(--foreground)/0.08)]'
           : 'border-border bg-muted/40',
@@ -437,133 +417,91 @@ function OtpSlot(props: SlotProps) {
 }
 
 function SecurityPanel() {
+  const toast = useToast();
   const [otp, setOtp] = useState('48');
-
   return (
-    <div className="rounded-lg border bg-card p-5 shadow-sm">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-foreground">WebDAV 安全同步确认</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            账本可同步到坚果云、NAS、Nextcloud 等 WebDAV 服务；
-            覆盖本机或云端数据前，需要输入一次性确认码，避免误操作。
-          </p>
-        </div>
-        <LockKeyhole className="h-5 w-5 text-muted-foreground" />
-      </div>
-
-      <OTPInput
-        maxLength={6}
-        value={otp}
-        onChange={setOtp}
-        pattern={REGEXP_ONLY_DIGITS}
-        placeholder="000000"
-        containerClassName="group flex items-center"
-        onComplete={() =>
-          toast.success('确认码验证通过', {
-            description: '可以安全执行上传或下载覆盖了。',
-          })
-        }
-        render={({ slots }) => (
-          <>
-            <div className="flex">{slots.slice(0, 3).map((slot, index) => <OtpSlot key={index} {...slot} />)}</div>
-            <div className="flex w-8 items-center justify-center">
-              <span className="h-1 w-3 rounded-full bg-border" />
-            </div>
-            <div className="flex">{slots.slice(3).map((slot, index) => <OtpSlot key={index} {...slot} />)}</div>
-          </>
-        )}
-      />
-
-      <div className="mt-5 grid gap-2 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Check className="h-4 w-4 text-success" />
-          智能同步自动比对本机与云端版本
-        </div>
-        <div className="flex items-center gap-2">
-          <Check className="h-4 w-4 text-success" />
-          上传、下载覆盖前必须输入一次性确认码
-        </div>
-        <div className="flex items-center gap-2">
-          <Check className="h-4 w-4 text-success" />
-          WebDAV 密码只保存在当前浏览器
+    <div className="glass-card grid items-center gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:gap-12">
+      <div className="flex items-start gap-4">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-accent-foreground"><ShieldCheck className="h-5 w-5" /></span>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold">自己的账本，自己保管</h3>
+          <p className="mt-2 max-w-xl text-sm leading-7 text-muted-foreground">数据默认留在浏览器。需要多设备备份时，可以连接自己的 WebDAV；覆盖数据前再确认一次。</p>
+          <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><LockKeyhole className="h-3.5 w-3.5 shrink-0" />这里是确认码交互演示，不会连接云端。</p>
         </div>
       </div>
-
-      <Button
-        className="mt-5 w-full"
-        onClick={() =>
-          toast.promise(new Promise((resolve) => window.setTimeout(resolve, 900)), {
-            loading: '正在生成同步快照',
-            success: '同步快照已生成',
-            error: '同步失败，请稍后重试',
-          })
-        }
-      >
-        <ShieldCheck className="h-4 w-4" />
-        同步预算快照
-      </Button>
+      <div className="min-w-0">
+        <p className="mb-3 text-xs text-muted-foreground">试着输入六位数字</p>
+        <OTPInput maxLength={6} value={otp} onChange={setOtp} pattern={REGEXP_ONLY_DIGITS} containerClassName="group flex items-center" aria-label="备份确认码演示"
+          onComplete={() => toast.success('确认码已输入完整。这是演示，你的账本没有发生变化。')}
+          render={({ slots }) => (
+            <>
+              <div className="flex">{slots.slice(0, 3).map((slot, index) => <OtpSlot key={index} {...slot} />)}</div>
+              <span className="px-2 text-muted-foreground">—</span>
+              <div className="flex">{slots.slice(3).map((slot, index) => <OtpSlot key={index} {...slot} />)}</div>
+            </>
+          )}
+        />
+      </div>
     </div>
   );
 }
 
 function BudgetStrategyPanel() {
-  const store = useCreateStore();
-  const strategy = useControls(
-    '预算策略',
-    {
-      spendingCap: { value: 9800, min: 6000, max: 16000, step: 100, label: '月支出上限' },
-      savingsTarget: { value: 26, min: 5, max: 50, step: 1, label: '储蓄目标' },
-      alertLevel: { value: 82, min: 50, max: 95, step: 1, label: '预警阈值' },
-      lockFixedBills: { value: true, label: '锁定固定支出' },
-    },
-    { store },
-  ) as {
-    spendingCap: number;
-    savingsTarget: number;
-    alertLevel: number;
-    lockFixedBills: boolean;
-  };
-
-  const daily = strategy.spendingCap / 30;
-  const projectedSavings = Math.max(0, 20500 - strategy.spendingCap);
+  const [spendingCap, setSpendingCap] = useState(9800);
+  const [savingsTarget, setSavingsTarget] = useState(26);
+  const [alertLevel, setAlertLevel] = useState(82);
+  const [lockFixedBills, setLockFixedBills] = useState(true);
+  const daily = spendingCap / 30;
+  const projectedSavings = 20500 - spendingCap;
+  const savingsGoal = 20500 * savingsTarget / 100;
+  const onTrack = projectedSavings >= savingsGoal;
+  const sliders = [
+    { id: 'spending-cap', label: '月支出上限', value: spendingCap, min: 6000, max: 16000, step: 100, update: setSpendingCap, display: new Intl.NumberFormat('zh-CN', cnyFormat).format(spendingCap), ends: ['¥6,000', '¥16,000'] },
+    { id: 'savings-target', label: '储蓄目标', value: savingsTarget, min: 5, max: 50, step: 1, update: setSavingsTarget, display: savingsTarget + '%', ends: ['5%', '50%'] },
+    { id: 'alert-level', label: '预算预警线', value: alertLevel, min: 50, max: 95, step: 1, update: setAlertLevel, display: alertLevel + '%', ends: ['50%', '95%'] },
+  ];
 
   return (
-    <div className="rounded-lg border bg-card p-5 shadow-sm">
-      <div className="mb-5 flex items-start justify-between gap-4">
+    <div className="glass-card min-w-0 p-5 sm:p-6">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-foreground">预算策略调节器</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            拖动参数时，右侧预算结果会即时重算。
-          </p>
+          <h3 className="text-base font-semibold">找到舒服的预算节奏</h3>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">以月收入 ¥20,500 为例，看看调整后的变化。</p>
         </div>
-        <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
+        <SlidersHorizontal className="h-5 w-5 shrink-0 text-muted-foreground" />
       </div>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_13rem]">
-        <div className="landing-leva min-h-[16rem] overflow-hidden rounded-lg border bg-background">
-          <LevaPanel
-            store={store}
-            fill
-            flat
-            hideCopyButton
-            titleBar={{ title: '策略面板', filter: false, drag: false }}
-          />
+      <div className="space-y-5">
+        {sliders.map((slider) => (
+          <div key={slider.id}>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <label htmlFor={slider.id} className="text-sm text-muted-foreground">{slider.label}</label>
+              <output htmlFor={slider.id} className="text-sm font-semibold tabular-nums">{slider.display}</output>
+            </div>
+            <input id={slider.id} type="range" min={slider.min} max={slider.max} step={slider.step} value={slider.value} onChange={(event) => slider.update(Number(event.target.value))} className="landing-slider" style={{ background: `linear-gradient(to right, hsl(var(--primary)) ${(slider.value - slider.min) / (slider.max - slider.min) * 100}%, hsl(var(--muted)) 0%)` }} />
+            <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">{slider.ends.map((end) => <span key={end}>{end}</span>)}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/50 pt-4">
+        <div>
+          <label htmlFor="lock-fixed-bills" className="text-sm font-medium">预留固定支出</label>
+          <p className="mt-1 text-xs text-muted-foreground">先留出房租和贷款，再看每日可花。</p>
         </div>
-        <div className="grid gap-3">
-          <div className="rounded-lg border bg-background p-4">
-            <p className="text-xs text-muted-foreground">日均可花</p>
-            <AnimatedCurrency value={daily} className="mt-1 block text-2xl font-semibold" />
-          </div>
-          <div className="rounded-lg border bg-background p-4">
-            <p className="text-xs text-muted-foreground">预计结余</p>
-            <AnimatedCurrency value={projectedSavings} className="mt-1 block text-2xl font-semibold" />
-          </div>
-          <div className="rounded-lg border bg-background p-4">
-            <p className="text-xs text-muted-foreground">预警线</p>
-            <AnimatedPercent value={strategy.alertLevel} className="mt-1 block text-2xl font-semibold" />
-          </div>
+        <Switch id="lock-fixed-bills" checked={lockFixedBills} onCheckedChange={setLockFixedBills} />
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl border border-primary/15 bg-primary/[0.07] p-4">
+        <div>
+          <p className="text-xs text-muted-foreground">{lockFixedBills ? '扣除固定支出后 / 日' : '每日支出额度'}</p>
+          <AnimatedCurrency value={lockFixedBills ? Math.max(0, spendingCap - 4500) / 30 : daily} className="mt-2 block text-2xl font-semibold" />
         </div>
+        <div className="border-l border-primary/15 pl-4">
+          <p className="text-xs text-muted-foreground">预计月结余</p>
+          <AnimatedCurrency value={projectedSavings} className="mt-2 block text-2xl font-semibold" />
+        </div>
+        <p className={cn('col-span-2 border-t border-primary/15 pt-3 text-xs leading-5', onTrack ? 'text-success' : 'text-warning')}>
+          {onTrack ? '按这个计划，能够达到储蓄目标。' : '再调低一些支出，就更接近储蓄目标了。'}
+          {lockFixedBills && ' 已预留 ¥4,500 固定支出。'}
+        </p>
       </div>
     </div>
   );
@@ -583,7 +521,7 @@ function SortableBudgetCard({ item }: { item: BudgetCard }) {
         transition,
       }}
       className={cn(
-        'rounded-lg border bg-background p-4 shadow-sm',
+        'rounded-2xl border border-border/50 bg-card/40 p-3.5',
         isDragging && 'relative z-10 shadow-lg ring-2 ring-ring',
       )}
     >
@@ -608,7 +546,7 @@ function SortableBudgetCard({ item }: { item: BudgetCard }) {
             <div className={cn('h-full rounded-full', item.tone)} style={{ width: `${usage}%` }} />
           </div>
           <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-            <span>
+            <span className="shrink-0">
               已用 <AnimatedCurrency value={item.spent} />
             </span>
             <span>
@@ -622,6 +560,7 @@ function SortableBudgetCard({ item }: { item: BudgetCard }) {
 }
 
 function BudgetPriorityList() {
+  const toast = useToast();
   const [items, setItems] = useState(initialBudgets);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -636,16 +575,16 @@ function BudgetPriorityList() {
       const newIndex = current.findIndex((item) => item.id === over.id);
       return arrayMove(current, oldIndex, newIndex);
     });
-    toast.message('预算优先级已更新');
+    toast.info('预算优先级已更新');
   }
 
   return (
-    <div className="rounded-lg border bg-card p-5 shadow-sm">
+    <div className="glass-card p-5">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-foreground">预算优先级</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            分类顺序会影响首页提醒和复盘视图。
+            拖动分类，试试自己习惯的排列。
           </p>
         </div>
         <WalletCards className="h-5 w-5 text-muted-foreground" />
@@ -666,22 +605,20 @@ function BudgetPriorityList() {
 
 function WorkflowSection() {
   return (
-    <section id="workflow" className="border-b py-14 sm:py-18">
+    <section id="workflow" className="border-b py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 max-w-2xl">
-          <p className="text-sm font-medium text-muted-foreground">从记录到决策</p>
           <h2 className="mt-2 text-3xl font-semibold text-foreground sm:text-4xl">
-            记账不是录入表格，是不断校准生活的速度
+            给每一笔钱，留好位置。
           </h2>
+          <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">安排分类预算，试试适合自己的消费节奏。下面的演示可以直接调整。</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="grid gap-6">
-            <SecurityPanel />
-            <BudgetPriorityList />
-          </div>
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          <BudgetPriorityList />
           <BudgetStrategyPanel />
         </div>
+        <div className="mt-5"><SecurityPanel /></div>
       </div>
     </section>
   );
@@ -711,21 +648,22 @@ function LedgerVirtualList() {
   const data = useMemo(() => createLedgerItems(), []);
 
   return (
-    <div className="rounded-lg border bg-card p-5 shadow-sm">
+    <div className="glass-card min-w-0 p-5 sm:p-6">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-foreground">完整账单流</p>
-          <p className="mt-1 text-sm text-muted-foreground">大批量记录保持同样的滚动手感。</p>
+          <h3 className="text-base font-semibold text-foreground">每一笔，都有迹可循</h3>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">860 条示例账单，向下滚动试试看。</p>
         </div>
         <ReceiptText className="h-5 w-5 text-muted-foreground" />
       </div>
 
-      <div className="h-[24rem] overflow-hidden rounded-lg border bg-background">
+      <div className="h-[20.625rem] overflow-hidden rounded-2xl border border-border/50 bg-card/35">
         <Virtuoso
+          style={{ height: '100%' }}
           data={data}
           fixedItemHeight={66}
           itemContent={(_, item) => (
-            <div className="flex h-[66px] items-center gap-3 border-b px-4">
+            <div className="flex h-[66px] items-center gap-3 border-b border-border/40 px-3 sm:px-4">
               <span
                 className={cn(
                   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
@@ -734,15 +672,11 @@ function LedgerVirtualList() {
                     : 'bg-destructive/10 text-destructive',
                 )}
               >
-                {item.type === 'income' ? (
-                  <PiggyBank className="h-4 w-4" />
-                ) : (
-                  <ReceiptText className="h-4 w-4" />
-                )}
+                <CategoryIcon category={item.category} type={item.type} className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="truncate text-xs text-muted-foreground">
                   {item.time} · {item.category} · {item.method}
                 </p>
               </div>
@@ -765,50 +699,46 @@ function LedgerVirtualList() {
 
 function PerformanceSection({ onCommandOpen }: { onCommandOpen: () => void }) {
   return (
-    <section id="performance" className="border-b bg-muted/25 py-14 sm:py-18">
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
-        <div className="grid content-start gap-6">
-          <div className="rounded-lg border bg-card p-5 shadow-sm">
+    <section id="performance" className="border-b bg-muted/15 py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 max-w-2xl">
+          <h2 className="text-3xl font-semibold sm:text-4xl">日常记录，随手就好。</h2>
+          <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">一笔午餐，一次发薪。让零散的收支，慢慢变成清楚的生活记录。</p>
+        </div>
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          <div className="glass-card p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-foreground">命令中心</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  快速触达记账、预算、同步、导出和提醒。
-                </p>
+                <h3 className="text-base font-semibold">想做什么，直接找到</h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">从这里打开账本、预算或报表。</p>
               </div>
-              <CommandIcon className="h-5 w-5 text-muted-foreground" />
+              <CommandIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
             </div>
-            <button
-              type="button"
-              onClick={onCommandOpen}
-              className="flex w-full items-center gap-3 rounded-lg border bg-background px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <Search className="h-4 w-4" />
-              搜索动作、页面或账单
-              <ChevronRight className="ml-auto h-4 w-4" />
+            <button type="button" onClick={onCommandOpen} className="glass-button flex w-full items-center gap-3 rounded-xl bg-card/40 px-4 py-3.5 text-left text-sm text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Search className="h-4 w-4 shrink-0" />搜索常用操作
+              <kbd className="ml-auto hidden rounded-md border border-border/60 px-1.5 py-0.5 text-[11px] sm:inline">Ctrl K</kbd>
             </button>
-            <div className="mt-4 grid gap-2">
-              {commandItems.slice(0, 3).map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-sm text-foreground">{item.label}</span>
-                  <BadgeCheck className="h-4 w-4 text-muted-foreground" />
-                </div>
+            <div className="mt-4 divide-y divide-border/40">
+              {commandItems.slice(0, 3).map(({ label, detail, to, icon: Icon }) => (
+                <Link key={to} to={to} className="group flex items-center gap-3 rounded-xl px-2 py-4 transition-colors hover:bg-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-accent-foreground"><Icon className="h-4 w-4" /></span>
+                  <div className="min-w-0"><p className="text-sm font-medium">{label}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p></div>
+                  <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+                </Link>
               ))}
             </div>
+            <p className="mt-3 border-t border-border/40 pt-4 text-xs leading-6 text-muted-foreground">用键盘也顺手：Ctrl / ⌘ K 唤起搜索，回车打开。</p>
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            {featureCards.map(({ title, copy, icon: Icon }) => (
-              <div key={title} className="rounded-lg border bg-card p-5 shadow-sm">
-                <Icon className="h-5 w-5 text-muted-foreground" />
-                <p className="mt-3 font-semibold text-foreground">{title}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
-              </div>
-            ))}
-          </div>
+          <LedgerVirtualList />
         </div>
-
-        <LedgerVirtualList />
+        <div className="mt-5 grid gap-5 md:grid-cols-3">
+          {featureCards.map(({ title, copy, icon: Icon }) => (
+            <div key={title} className="flex items-start gap-3 px-1 py-5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-card/40 text-accent-foreground"><Icon className="h-5 w-5" /></span>
+              <div><h3 className="text-sm font-semibold">{title}</h3><p className="mt-2 text-sm leading-7 text-muted-foreground">{copy}</p></div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -816,14 +746,14 @@ function PerformanceSection({ onCommandOpen }: { onCommandOpen: () => void }) {
 
 function ClosingCta() {
   return (
-    <section className="py-14 sm:py-18">
+    <section className="py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-lg border bg-foreground p-6 text-background shadow-sm sm:p-8">
+        <div className="glass-card border-primary/20 bg-primary/10 p-6 sm:p-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <p className="text-sm text-background/65">今天就把账本重新放回你手里</p>
+              <p className="text-sm text-muted-foreground">今天就把账本重新放回你手里</p>
               <h2 className="mt-2 text-3xl font-semibold">从一笔支出开始，建立可持续的预算节奏。</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-background/70">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                 先用示例数据熟悉流程，再替换成自己的收入、预算和贷款计划。
               </p>
             </div>
@@ -834,18 +764,8 @@ function ClosingCta() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-white/20 bg-transparent text-background hover:bg-white/10 hover:text-background"
-                onClick={() =>
-                  toast.success('演示报表已生成', {
-                    description: '你可以在应用内导出真实账单。',
-                  })
-                }
-              >
-                <Download className="h-4 w-4" />
-                生成演示报表
+              <Button asChild variant="outline" size="lg">
+                <Link to="/app/budget">先安排本月预算</Link>
               </Button>
             </div>
           </div>
@@ -862,11 +782,16 @@ function CommandPalette({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const navigate = useNavigate();
   return (
     <Command.Dialog open={open} onOpenChange={onOpenChange} label="命令中心" loop>
-      <div className="flex items-center gap-3 border-b px-4">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Command.Input placeholder="搜索记账动作、页面或提醒..." />
+      <div className="flex items-center justify-between px-5 pb-2 pt-5">
+        <div><p className="text-base font-semibold">想从哪一笔开始？</p><p className="mt-1 text-xs text-muted-foreground">搜索并打开 PennyPeek 的常用功能</p></div>
+        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} aria-label="关闭命令中心"><X /></Button>
+      </div>
+      <div className="mx-4 mt-2 flex items-center gap-3 rounded-xl border border-border/60 bg-card/50 px-3">
+        <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <Command.Input autoFocus placeholder="搜索账本、预算、报表…" />
       </div>
       <Command.List>
         <Command.Empty>没有匹配的动作</Command.Empty>
@@ -877,27 +802,28 @@ function CommandPalette({
               value={`${item.label} ${item.detail}`}
               onSelect={() => {
                 onOpenChange(false);
-                toast.success(item.label, { description: item.detail });
+                navigate(item.to);
               }}
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <CommandIcon className="h-4 w-4" />
+              <div className="command-item-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-accent-foreground">
+                <item.icon className="h-4 w-4" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.detail}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.detail}</p>
               </div>
+              <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
             </Command.Item>
           ))}
         </Command.Group>
       </Command.List>
+      <div className="flex items-center justify-between gap-3 border-t border-border/40 px-5 py-3 text-[11px] text-muted-foreground"><span>↑ ↓ 选择 · Enter 打开</span><span>Esc 关闭</span></div>
     </Command.Dialog>
   );
 }
 
 export function Landing() {
   const [commandOpen, setCommandOpen] = useState(false);
-  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -911,15 +837,15 @@ export function Landing() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="min-h-dvh text-foreground">
       <LandingHeader onCommandOpen={() => setCommandOpen(true)} />
       <HeroSection onCommandOpen={() => setCommandOpen(true)} />
-      <LiveOverview />
+      <OverviewSection />
       <WorkflowSection />
       <PerformanceSection onCommandOpen={() => setCommandOpen(true)} />
       <ClosingCta />
+      <LandingFooter />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
-      <Toaster richColors closeButton position="bottom-right" theme={resolvedTheme} />
     </div>
   );
 }

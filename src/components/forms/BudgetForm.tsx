@@ -3,12 +3,14 @@
  */
 import { useState } from 'react';
 import type { Budget } from '@/types';
-import { EXPENSE_CATEGORIES } from '@/lib/constants';
+import { getExpenseCategories, newBudgetCategoryError } from '@/lib/categories';
 import { safeNumber, formatMonthLabel } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
-import { Field, SelectField } from './fields';
+import { Field } from './fields';
+import { AmountField, IconChoices } from './EntryFields';
+import { IconPlus } from '@/components/Icons';
 
 interface Props {
   initial?: Budget;
@@ -21,21 +23,27 @@ interface Props {
 export function BudgetForm({ initial, month, existingCategories, onClose }: Props) {
   const addBudget = useStore((s) => s.addBudget);
   const updateBudget = useStore((s) => s.updateBudget);
+  const budgets = useStore((s) => s.budgets);
+  const transactions = useStore((s) => s.transactions);
   const toast = useToast();
   const isEdit = !!initial;
 
-  const available = EXPENSE_CATEGORIES.filter(
+  const available = getExpenseCategories(budgets, transactions).filter(
     (c) => isEdit || !existingCategories.includes(c)
   );
   const [category, setCategory] = useState(
-    initial?.category ?? available[0] ?? EXPENSE_CATEGORIES[0]
+    initial ? `category:${initial.category}` : available.length ? `category:${available[0]}` : 'custom'
   );
+  const [customName, setCustomName] = useState('');
+  const isCustom = category === 'custom';
+  const resolvedCategory = isCustom ? customName.trim() : category.slice('category:'.length);
   const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (!category) e.category = '请选择分类';
+    const categoryError = isEdit ? (!resolvedCategory ? '请选择分类' : '') : newBudgetCategoryError(resolvedCategory, existingCategories);
+    if (categoryError) e.category = categoryError;
     if (!amount.trim()) e.amount = '请输入预算金额';
     else if (safeNumber(amount) <= 0) e.amount = '预算金额必须大于 0';
     setErrors(e);
@@ -46,56 +54,41 @@ export function BudgetForm({ initial, month, existingCategories, onClose }: Prop
     ev.preventDefault();
     if (!validate()) return;
     if (isEdit && initial) {
-      updateBudget(initial.id, { category, amount: safeNumber(amount) });
+      updateBudget(initial.id, { category: resolvedCategory, amount: safeNumber(amount) });
       toast.success('预算已更新');
     } else {
-      addBudget({ month, category, amount: safeNumber(amount) });
+      addBudget({ month, category: resolvedCategory, amount: safeNumber(amount) });
       toast.success('预算已添加');
     }
     onClose();
   }
 
-  if (!isEdit && available.length === 0) {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          {formatMonthLabel(month)} 的所有支出分类都已设置预算了。你可以直接在列表中修改已有预算。
-        </p>
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={onClose}>
-            知道了
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        设置 <span className="font-medium text-foreground">{formatMonthLabel(month)}</span>{' '}
-        的分类预算
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <p className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-accent-foreground">
+        {formatMonthLabel(month)}
       </p>
-      <Field label="支出分类" required error={errors.category}>
-        <SelectField
+      <AmountField label="预算金额" value={amount} onChange={setAmount} error={errors.amount} autoFocus />
+      <Field label="支出分类" required error={!isCustom ? errors.category : undefined}>
+        <IconChoices
+          label="支出分类"
           value={category}
-          onChange={setCategory}
-          options={isEdit ? EXPENSE_CATEGORIES : available}
+          onChange={(value) => { setCategory(value); setErrors({}); }}
+          options={[
+            ...(isEdit && initial ? [initial.category] : available).map((name) => ({ value: `category:${name}`, label: name })),
+            ...(!isEdit ? [{ value: 'custom', label: '自定义', icon: IconPlus }] : []),
+          ]}
+          className={isEdit ? 'grid-cols-1' : 'sm:grid-cols-5'}
           disabled={isEdit}
         />
       </Field>
-      <Field label="预算金额" required error={errors.amount}>
-        <Input
-          type="number"
-          inputMode="decimal"
-          min="0"
-          step="0.01"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </Field>
-      <div className="flex justify-end gap-2 pt-2">
+      {isCustom && (
+        <Field id="budget-custom-category" label="分类名称" required error={errors.category}>
+          <Input id="budget-custom-category" value={customName} maxLength={30} placeholder="例如：健身、咖啡、数码"
+            onChange={(event) => { setCustomName(event.target.value); setErrors({}); }} aria-invalid={!!errors.category} />
+        </Field>
+      )}
+      <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" onClick={onClose}>
           取消
         </Button>

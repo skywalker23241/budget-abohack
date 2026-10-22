@@ -10,6 +10,7 @@ import {
   TRANSACTION_TYPE_LABELS,
 } from '@/lib/constants';
 import { todayStr, safeNumber } from '@/lib/format';
+import { getExpenseCategories } from '@/lib/categories';
 import { useStore } from '@/store/useStore';
 import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
@@ -27,6 +28,8 @@ interface Props {
 export function TransactionForm({ initial, defaultType, onClose }: Props) {
   const addTransaction = useStore((s) => s.addTransaction);
   const updateTransaction = useStore((s) => s.updateTransaction);
+  const budgets = useStore((s) => s.budgets);
+  const transactions = useStore((s) => s.transactions);
   const toast = useToast();
   const isEdit = !!initial;
 
@@ -48,12 +51,13 @@ export function TransactionForm({ initial, defaultType, onClose }: Props) {
   const [isFixed, setIsFixed] = useState(initial?.isFixed ?? false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const expenseCategories = getExpenseCategories(budgets, transactions);
+  const categories = type === 'income' ? INCOME_CATEGORIES : expenseCategories;
 
   // 切换类型时，若当前分类不在新类型分类列表内，自动重置
   function handleTypeChange(t: TransactionType) {
     setType(t);
-    const list = t === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    const list = t === 'income' ? INCOME_CATEGORIES : expenseCategories;
     if (!list.includes(category as never)) {
       setCategory(list[t === 'income' ? 0 : 3]);
     }
@@ -134,6 +138,7 @@ export function TransactionForm({ initial, defaultType, onClose }: Props) {
             value={category}
             onChange={setCategory}
             options={categories}
+            categoryIcons
           />
         </Field>
         <Field label="支付方式">
@@ -147,7 +152,6 @@ export function TransactionForm({ initial, defaultType, onClose }: Props) {
 
       <InlineDisclosure
         title="高级选项"
-        subtitle="备注、预算归属和固定收支"
         defaultOpen={isEdit}
       >
         <Field label="备注">

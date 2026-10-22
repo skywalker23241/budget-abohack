@@ -12,7 +12,7 @@ import {
 } from '@/components/Icons';
 import type { AppData } from '@/types';
 import { useStore } from '@/store/useStore';
-import { todayStr } from '@/lib/format';
+import { todayStr, csvCell } from '@/lib/format';
 import { TRANSACTION_TYPE_LABELS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import {
@@ -70,12 +70,6 @@ function download(filename: string, content: string, mime: string) {
 }
 
 /** CSV 字段转义 */
-function csvCell(v: string | number): string {
-  const s = String(v ?? '');
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
-
 function formatSyncTime(value?: string): string {
   if (!value) return '从未';
   const date = new Date(value);
@@ -111,13 +105,13 @@ function SettingActionRow({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'app-press group flex w-full items-center gap-3 px-3 py-3.5 text-left transition-colors disabled:pointer-events-none disabled:opacity-50',
+        'group flex w-full items-center gap-4 px-4 py-4 text-left transition-colors focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 sm:px-5',
         danger ? 'hover:bg-destructive/[0.045]' : 'hover:bg-muted/45',
       )}
     >
       <span
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground',
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-accent-foreground',
           danger && 'bg-destructive/10 text-destructive',
         )}
       >
@@ -126,14 +120,14 @@ function SettingActionRow({
       <span className="min-w-0 flex-1">
         <span
           className={cn(
-            'block break-words text-sm font-medium text-foreground group-hover:text-foreground',
+            'block break-words text-sm font-medium text-foreground',
             danger && 'text-destructive',
           )}
         >
           {title}
         </span>
         {description && (
-          <span className="mt-0.5 block break-words text-xs text-muted-foreground">
+          <span className="mt-1 block break-words text-xs leading-5 text-muted-foreground">
             {description}
           </span>
         )}
@@ -147,20 +141,27 @@ function SettingFieldRow({
   title,
   description,
   children,
+  id,
+  unit,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
+  id?: string;
+  unit?: string;
 }) {
   return (
-    <div className="grid min-w-0 gap-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(0,1fr)_minmax(13rem,18rem)] md:items-center md:gap-8">
+    <div className="grid min-w-0 gap-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(0,1fr)_minmax(12rem,17rem)] md:items-center md:gap-6">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{title}</p>
+        <label htmlFor={id} className="text-sm font-medium text-foreground">{title}</label>
         {description && (
           <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{description}</p>
         )}
       </div>
-      <div className="min-w-0 md:justify-self-stretch">{children}</div>
+      <div className={cn('relative min-w-0 md:justify-self-stretch', unit && '[&_input]:pr-14')}>
+        {children}
+        {unit && <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">{unit}</span>}
+      </div>
     </div>
   );
 }
@@ -483,15 +484,15 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
       {securityConfirmDialog}
       {!embedded && (
         <>
-          <PageHeader title="设置" subtitle="偏好设置与数据管理" />
+          <PageHeader title="设置" />
           <AppSummaryCard
             eyebrow="设置中心"
             title={syncConfigured ? '云同步配置' : '本地数据'}
             value={syncConfigured ? syncResultLabel(syncMeta.lastResult) : `${totalLocalItems} 项`}
             subtitle={
               syncConfigured
-                ? `最近同步：${formatSyncTime(syncMeta.lastSyncAt)}。密码仅保存在当前浏览器。`
-                : '当前数据保存在本机浏览器，建议配置 WebDAV 或定期导出备份。'
+                ? `最近同步：${formatSyncTime(syncMeta.lastSyncAt)}`
+                : '保存在当前浏览器'
             }
             accent={syncConfigured ? 'info' : 'warning'}
             meta={[
@@ -506,7 +507,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
       <div
         data-tour={embedded ? 'settings-panel' : undefined}
         className={cn(
-          'grid min-w-0 grid-cols-1',
+          'settings-panel grid min-w-0 grid-cols-1',
           embedded
             ? 'md:h-full md:min-h-0 md:grid-cols-[13rem_minmax(0,1fr)]'
             : 'gap-4 lg:grid-cols-2',
@@ -514,73 +515,67 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
         )}
       >
         {embedded && (
-          <aside className="border-b bg-muted/35 p-2 md:row-start-1 md:h-full md:min-h-0 md:overflow-hidden md:border-b-0 md:border-r md:p-4">
-            <p className="hidden px-3 pb-3 pt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/75 md:block">
-              设置分类
-            </p>
-            <nav className="grid grid-cols-4 gap-1 md:flex md:flex-col">
+          <aside className="sticky top-0 z-10 border-b border-border/50 bg-popover/95 p-2 backdrop-blur-xl md:static md:row-start-1 md:flex md:h-full md:min-h-0 md:flex-col md:border-b-0 md:border-r md:bg-muted/20 md:p-3">
+            <nav aria-label="设置分类" className="grid grid-cols-4 gap-1 md:flex md:flex-col md:gap-1.5">
               {[
                 {
                   id: 'preferences' as const,
                   title: '偏好设置',
-                  subtitle: '主题、币种与提醒',
                   icon: IconSettings,
                 },
                 {
                   id: 'backup' as const,
                   title: '数据备份',
-                  subtitle: '导入与导出',
                   icon: IconDownload,
                 },
                 {
                   id: 'sync' as const,
                   title: '云同步',
-                  subtitle: 'WebDAV 私有同步',
                   icon: Cloud,
                 },
                 {
                   id: 'other' as const,
                   title: '其他操作',
-                  subtitle: '向导、示例与重置',
                   icon: IconHelp,
                 },
-              ].map(({ id, title, subtitle, icon: SectionIcon }) => {
+              ].map(({ id, title, icon: SectionIcon }) => {
                 const active = activeSection === id;
                 return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => setActiveSection(id)}
+                    aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'app-press flex min-w-0 flex-col items-center gap-1 rounded-xl px-1.5 py-2.5 text-center md:w-full md:flex-row md:gap-3 md:px-3 md:py-3 md:text-left',
+                      'flex min-w-0 flex-col items-center gap-1.5 rounded-xl px-1.5 py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:w-full md:flex-row md:gap-3 md:px-3 md:py-3.5 md:text-left',
                       active
-                        ? 'bg-foreground text-background shadow-sm [&_.settings-nav-subtitle]:text-background/60'
+                        ? 'bg-primary/15 text-accent-foreground'
                         : 'text-muted-foreground hover:bg-background/75 hover:text-foreground',
                     )}
                   >
                     <SectionIcon
                       className="h-5 w-5 shrink-0"
-                      weight={active ? 'fill' : 'regular'}
+                      weight="duotone"
                     />
                     <span className="min-w-0">
                       <span className="block whitespace-nowrap text-xs font-medium md:text-sm">
                         {title}
-                      </span>
-                      <span className="settings-nav-subtitle mt-0.5 hidden truncate text-[11px] text-muted-foreground md:block">
-                        {subtitle}
                       </span>
                     </span>
                   </button>
                 );
               })}
             </nav>
+            <div className="mt-auto hidden items-start gap-2.5 px-3 pb-2 pt-8 text-muted-foreground md:flex">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+              <p className="text-xs">本地存储</p>
+            </div>
           </aside>
         )}
 
         {/* 偏好设置 */}
         <MobileCollapsibleSection
           title="偏好设置"
-          subtitle="主题、币种和提醒阈值"
           defaultOpen
           alwaysOpen={embedded}
           className={cn(
@@ -589,34 +584,41 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
             embedded && activeSection !== 'preferences' && 'hidden',
           )}
         >
-          <Card className="border-0 bg-transparent p-0 shadow-none">
+          <Card padding={false} className="settings-section">
             <SectionTitle
               title="偏好设置"
-              subtitle="调整界面、默认币种和财务提醒规则"
               action={
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                   <IconSettings className="h-4 w-4" weight="duotone" />
                 </span>
               }
             />
-            <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_12px_35px_-30px_rgba(15,23,42,.3)]">
-              <SettingFieldRow title="外观主题" description="选择浅色、深色或跟随设备系统。">
+            <p className="settings-group-label">外观与显示</p>
+            <div className="settings-surface divide-y divide-border/50">
+              <SettingFieldRow title="外观主题">
                 <ThemeSegmented />
               </SettingFieldRow>
 
-              <SettingFieldRow title="默认币种" description="用于所有金额、图表和导出数据的展示。">
+              <SettingFieldRow id="settings-currency" title="默认币种" description="仅显示，不换算">
                 <SelectField
+                  id="settings-currency"
                   value={settings.currency}
                   onChange={(v) => updateSettings({ currency: v })}
                   options={CURRENCIES.map((c) => ({ value: c.code, label: c.label }))}
                 />
               </SettingFieldRow>
+            </div>
+
+            <p className="settings-group-label mt-6">预算与提醒</p>
+            <div className="settings-surface divide-y divide-border/50">
 
               <SettingFieldRow
+                id="settings-savings"
+                unit="%"
                 title="月度储蓄率目标"
-                description="储蓄率 =（收入 - 支出）/ 收入，用于判断本月是否达标。"
               >
                 <Input
+                  id="settings-savings"
                   type="number"
                   min="0"
                   max="100"
@@ -630,10 +632,12 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
               </SettingFieldRow>
 
               <SettingFieldRow
-                title="预算预警阈值"
-                description="分类预算使用率达到该比例时发出提醒。"
+                id="settings-budget-warning"
+                unit="%"
+                title="预算使用率预警"
               >
                 <Input
+                  id="settings-budget-warning"
                   type="number"
                   min="1"
                   max="100"
@@ -647,10 +651,12 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
               </SettingFieldRow>
 
               <SettingFieldRow
+                id="settings-large-expense"
+                unit={settings.currency}
                 title="大额支出提醒"
-                description="单笔支出超过该金额时，在财务健康与提醒中重点显示。"
               >
                 <Input
+                  id="settings-large-expense"
                   type="number"
                   min="0"
                   value={settings.largeExpenseThreshold}
@@ -663,10 +669,13 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
               </SettingFieldRow>
 
               <SettingFieldRow
-                title="每月记账周期起始日"
-                description="用于自定义月度周期，支持 1–28 日。"
+                id="settings-month-start"
+                unit="日"
+                title="记账周期起始日"
+                description="每月 1–28 日"
               >
                 <Input
+                  id="settings-month-start"
                   type="number"
                   min="1"
                   max="28"
@@ -688,33 +697,36 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
             'space-y-4',
             embedded &&
               'settings-scroll-pane p-4 sm:p-6 md:col-start-2 md:row-start-1 md:h-full md:min-h-0 md:overflow-y-auto md:overscroll-contain md:p-7',
+            embedded && activeSection === 'preferences' && 'hidden',
           )}
         >
           <MobileCollapsibleSection
             title="数据备份"
-            subtitle="导入、导出 JSON / CSV"
             alwaysOpen={embedded}
             className={cn(embedded && activeSection !== 'backup' && 'hidden')}
           >
-            <Card className="border-0 bg-transparent p-0 shadow-none">
-              <SectionTitle title="数据备份" subtitle="所有数据仅保存在本地浏览器" />
-              <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card">
+            <Card padding={false} className="settings-section">
+              <SectionTitle title="数据备份" />
+              <div className="settings-surface mb-5 grid grid-cols-3 gap-3 px-4 py-5 text-center">
+                <div><p className="text-xl font-semibold tabular-nums">{transactions.length}</p><p className="mt-1 text-xs text-muted-foreground">记账记录</p></div>
+                <div className="border-x border-border/50"><p className="text-xl font-semibold tabular-nums">{budgets.length + goals.length}</p><p className="mt-1 text-xs text-muted-foreground">预算 / 目标</p></div>
+                <div><p className="text-xl font-semibold tabular-nums">{loans.length + incomeSources.length}</p><p className="mt-1 text-xs text-muted-foreground">贷款 / 收入</p></div>
+              </div>
+              <div className="settings-surface divide-y divide-border/50">
                 <SettingActionRow
                   icon={<IconDownload className="h-4 w-4" />}
-                  title="导出全部数据"
-                  description="JSON 备份，可恢复到任意浏览器"
+                  title="导出 JSON 备份"
                   onClick={handleExportJSON}
                 />
                 <SettingActionRow
                   icon={<IconReceipt className="h-4 w-4" />}
-                  title="导出记账记录"
-                  description={`${transactions.length} 笔流水，CSV 格式`}
+                  title="导出 CSV 流水"
                   onClick={handleExportCSV}
                 />
                 <SettingActionRow
                   icon={<IconUpload className="h-4 w-4" />}
                   title={importing ? '导入中…' : '从 JSON 文件导入'}
-                  description="会覆盖当前所有本地数据"
+                  description="覆盖本机全部数据"
                   onClick={() => fileRef.current?.click()}
                   disabled={importing}
                 />
@@ -731,20 +743,24 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
 
           <MobileCollapsibleSection
             title="WebDAV 云同步"
-            subtitle={`最近同步：${formatSyncTime(syncMeta.lastSyncAt)}`}
             alwaysOpen={embedded}
             className={cn(embedded && activeSection !== 'sync' && 'hidden')}
           >
-          <Card className="border-0 bg-transparent p-0 shadow-none">
+          <Card padding={false} className="settings-section">
               <SectionTitle
                 title="WebDAV 云同步"
-                subtitle="同步为云端 JSON 文件，适合坚果云、NAS、Nextcloud 等 WebDAV 服务"
                 action={<Cloud className="h-5 w-5 text-muted-foreground" />}
               />
 
-            <div className="space-y-4 rounded-2xl border border-border/70 bg-card p-4 shadow-[0_12px_35px_-30px_rgba(15,23,42,.3)] sm:p-5">
-              <Field label="WebDAV 服务地址" hint="例如 https://dav.example.com/dav/">
+            <div className="mb-5 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3">
+              <Cloud className="h-5 w-5 shrink-0 text-accent-foreground" weight="duotone" />
+              <p className="min-w-0 flex-1 text-sm font-medium">{syncConfigured ? '已填写同步配置' : '尚未配置'}</p>
+            </div>
+            <p className="settings-group-label">连接配置</p>
+            <div className="settings-surface space-y-4 p-4 sm:p-5">
+              <Field id="webdav-url" label="服务地址">
                 <Input
+                  id="webdav-url"
                   value={syncConfig.serverUrl}
                   onChange={(e) => updateSyncConfig('serverUrl', e.target.value)}
                   placeholder="https://dav.example.com/dav/"
@@ -753,8 +769,9 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
               </Field>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="用户名">
+                <Field id="webdav-username" label="用户名">
                   <Input
+                    id="webdav-username"
                     value={syncConfig.username}
                     onChange={(e) => updateSyncConfig('username', e.target.value)}
                     placeholder="WebDAV 账号"
@@ -762,8 +779,9 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                   />
                 </Field>
 
-                <Field label="密码 / 应用密码">
+                <Field id="webdav-password" label="密码 / 应用密码">
                   <Input
+                    id="webdav-password"
                     type="password"
                     value={syncConfig.password}
                     onChange={(e) => updateSyncConfig('password', e.target.value)}
@@ -773,8 +791,9 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 </Field>
               </div>
 
-              <Field label="云端文件路径" hint="会自动创建中间目录；同一账号多设备保持一致">
+              <Field id="webdav-path" label="云端文件路径" hint="多设备使用相同路径">
                 <Input
+                  id="webdav-path"
                   value={syncConfig.remotePath}
                   onChange={(e) => updateSyncConfig('remotePath', e.target.value)}
                   placeholder="/personal-budget-app/budget-sync.json"
@@ -784,7 +803,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button
                   variant="outline"
-                  className="justify-start"
+                  className="justify-center"
                   onClick={handleSaveSyncConfig}
                   disabled={!!syncing}
                 >
@@ -793,7 +812,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-start"
+                  className="justify-center"
                   onClick={handleTestConnection}
                   disabled={!!syncing}
                 >
@@ -801,10 +820,14 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                   {syncing === 'test' ? '测试中…' : '测试连接'}
                 </Button>
               </div>
+            </div>
 
+            <p className="settings-group-label mt-6">同步账本</p>
+            <div className="settings-surface space-y-4 p-4 sm:p-5">
+              <p className="text-xs text-muted-foreground">上传或下载会覆盖对应端账本</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Button
-                  className="justify-start"
+                  className="justify-center"
                   onClick={handleSmartSync}
                   disabled={!!syncing}
                 >
@@ -813,7 +836,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-start"
+                  className="justify-center"
                   onClick={handleUploadToCloud}
                   disabled={!!syncing}
                 >
@@ -822,7 +845,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-start"
+                  className="justify-center"
                   onClick={handleDownloadFromCloud}
                   disabled={!!syncing}
                 >
@@ -831,23 +854,29 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-xs leading-relaxed text-muted-foreground">
-                <p>上次同步：{formatSyncTime(syncMeta.lastSyncAt)}</p>
-                <p>本机修改：{formatSyncTime(syncMeta.lastLocalChangeAt)}</p>
-                <p>云端版本：{formatSyncTime(syncMeta.lastRemoteUpdatedAt)}</p>
-                <p>最近结果：{syncResultLabel(syncMeta.lastResult)}</p>
-              </div>
+              <dl className="grid gap-x-6 gap-y-3 border-t border-border/50 pt-4 text-xs sm:grid-cols-2">
+                {[
+                  ['上次同步', formatSyncTime(syncMeta.lastSyncAt)],
+                  ['本机修改', formatSyncTime(syncMeta.lastLocalChangeAt)],
+                  ['云端版本', formatSyncTime(syncMeta.lastRemoteUpdatedAt)],
+                  ['最近结果', syncResultLabel(syncMeta.lastResult)],
+                ].map(([label, value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}
+              </dl>
+            </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <p className="text-xs leading-relaxed text-muted-foreground">
+              <div className="mt-4 flex flex-col gap-3">
+                <details className="text-xs leading-relaxed text-muted-foreground">
+                  <summary className="w-fit cursor-pointer rounded-md py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">同步说明</summary>
+                  <p className="mt-2">
                   密码只保存在当前浏览器；同步请求会通过同源 /api/webdav 代理转发到 WebDAV。
                   上传或下载覆盖数据前需要输入一次性确认码（安全同步确认）。
                   本地开发服务器已内置代理，正式部署时也需要提供同名接口。
-                </p>
+                  </p>
+                </details>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="justify-start text-muted-foreground"
+                  className="w-fit justify-start text-muted-foreground hover:text-destructive"
                   onClick={handleClearSyncConfig}
                   disabled={!!syncing}
                 >
@@ -855,42 +884,39 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                   清除配置
                 </Button>
               </div>
-            </div>
           </Card>
           </MobileCollapsibleSection>
 
           <MobileCollapsibleSection
             title="其他操作"
-            subtitle="示例数据与本地重置"
             alwaysOpen={embedded}
             className={cn(embedded && activeSection !== 'other' && 'hidden')}
           >
-            <Card className="border-0 bg-transparent p-0 shadow-none">
-              <SectionTitle title="其他操作" subtitle="演示数据与本地重置" />
-              <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70 bg-card">
+            <Card padding={false} className="settings-section">
+              <SectionTitle title="其他操作" />
+              <div className="settings-surface divide-y divide-border/50">
                 <SettingActionRow
                   icon={<IconHelp className="h-4 w-4" />}
-                  title="重新查看使用向导"
-                  description="按步骤了解记账、预算、报表与备份"
+                  title="使用向导"
                   onClick={openOnboardingGuide}
                 />
                 <SettingActionRow
                   icon={<IconSettings className="h-4 w-4" />}
                   title="载入示例数据"
-                  description="用示例账本体验完整功能"
+                  description="替换当前账本，建议先备份"
                   onClick={handleLoadSample}
                 />
               </div>
 
               <div className="mt-5">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-destructive">
+                <p className="mb-2 px-1 text-xs font-medium text-destructive">
                   危险操作
                 </p>
                 <div className="overflow-hidden rounded-2xl border border-destructive/25 bg-destructive/[0.025]">
                 <SettingActionRow
                   icon={<IconTrash className="h-4 w-4" />}
                   title="清空所有数据"
-                  description="永久删除本机账单、预算、贷款、收入和目标，仅保留偏好设置"
+                  description="不可恢复，偏好设置保留"
                   onClick={handleClear}
                   danger
                 />
@@ -901,14 +927,12 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
 
           <Card
             className={cn(
-              'rounded-2xl border-dashed bg-muted/25 shadow-none',
+              'settings-note border-0 bg-transparent p-1 shadow-none',
               embedded && activeSection !== 'other' && 'hidden',
             )}
           >
             <p className="text-xs leading-relaxed text-muted-foreground">
-              本应用为纯前端应用，不依赖任何后端服务，数据通过浏览器 localStorage
-              持久化保存。清除浏览器缓存或更换设备/浏览器将导致数据丢失，请定期使用「导出
-              JSON 备份」功能保存数据。
+              数据保存在当前浏览器，请定期备份。
             </p>
           </Card>
         </div>

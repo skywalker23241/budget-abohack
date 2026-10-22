@@ -8,7 +8,9 @@ import { safeNumber, clamp } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
-import { Field, Toggle, SelectField } from './fields';
+import { Field, Toggle } from './fields';
+import { AmountField, IconChoices } from './EntryFields';
+import { InlineDisclosure } from '@/components/MobileCollapsibleSection';
 
 interface Props {
   initial?: IncomeSource;
@@ -59,37 +61,23 @@ export function IncomeForm({ initial, onClose }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <AmountField label="收入金额" value={amount} onChange={setAmount} error={errors.amount} autoFocus />
+      <Field label="收入类型" required>
+        <IconChoices label="收入类型" value={type} onChange={setType} options={INCOME_TYPES} type="income" className="sm:grid-cols-5" />
+      </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="收入名称" required error={errors.name}>
+        <Field id="income-name" label="收入名称" required error={errors.name}>
           <Input
+            id="income-name"
             placeholder="如：主职工资"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </Field>
-        <Field label="收入类型" required>
-          <SelectField
-            value={type}
-            onChange={(v) => setType(v as IncomeType)}
-            options={INCOME_TYPES}
-          />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="金额" required error={errors.amount}>
+        <Field id="income-payday" label="每月到账日">
           <Input
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </Field>
-        <Field label="到账日（每月几号）">
-          <Input
+            id="income-payday"
             type="number"
             min="1"
             max="31"
@@ -99,8 +87,11 @@ export function IncomeForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <Field label="备注">
+      <InlineDisclosure title="更多选项" defaultOpen={isEdit}>
+      <div className="space-y-4">
+      <Field id="income-note" label="备注">
         <Input
+          id="income-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="可选"
@@ -109,8 +100,10 @@ export function IncomeForm({ initial, onClose }: Props) {
       </Field>
 
       <Toggle checked={isFixed} onChange={setIsFixed} label="固定收入" />
+      </div>
+      </InlineDisclosure>
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" onClick={onClose}>
           取消
         </Button>

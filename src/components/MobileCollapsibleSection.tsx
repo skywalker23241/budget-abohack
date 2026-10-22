@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { ChevronDown } from '@/components/Icons';
 import { cn } from '@/lib/utils';
 
@@ -80,7 +80,7 @@ export function MobileCollapsibleSection({
       >
         <div
           className={cn(
-            'min-h-0 overflow-hidden',
+            'min-h-0 overflow-hidden md:overflow-visible',
             (open || alwaysOpen) && 'app-enter',
             contentClassName,
           )}
@@ -97,27 +97,34 @@ export function InlineDisclosure({
   subtitle,
   children,
   defaultOpen = false,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const open = controlledOpen ?? internalOpen;
+  const contentId = useId();
   const inertProps = !open ? ({ inert: '' } as { inert: string }) : {};
 
   return (
-    <div className="rounded-lg border bg-background app-card-motion">
+    <div className="border-t border-border/60 pt-2">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="app-press flex w-full items-center gap-3 px-3 py-2.5 text-left"
+        onClick={() => { setInternalOpen(!open); onOpenChange?.(!open); }}
+        className="group flex w-full items-center gap-3 rounded-xl px-1 py-2.5 text-left transition-colors hover:bg-accent/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-expanded={open}
+        aria-controls={contentId}
       >
         <span className="min-w-0 flex-1">
-          <span className="block break-words text-sm font-medium text-foreground">{title}</span>
+          <span className="block break-words text-sm font-medium text-muted-foreground group-hover:text-foreground">{title}</span>
           {subtitle && (
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            <span className="mt-1 block break-words text-xs text-muted-foreground/80">
               {subtitle}
             </span>
           )}
@@ -130,16 +137,17 @@ export function InlineDisclosure({
         />
       </button>
       <div
+        id={contentId}
         {...inertProps}
         aria-hidden={!open}
         className={cn(
-          'grid transition-[grid-template-rows,opacity] [transition-duration:350ms] ease-out',
+          'grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none',
           !open && 'pointer-events-none',
           open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
         )}
       >
-        <div className={cn('min-h-0 overflow-hidden px-3 pb-3', open && 'app-enter')}>
-          {children}
+        <div className="min-h-0 overflow-hidden">
+          <div className="px-1 pb-2 pt-3">{children}</div>
         </div>
       </div>
     </div>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新增表单自检 · 仅内存</title>
+<div id="root"></div>
+<script type="module">
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import '/src/index.css';
+
+  // 此页面的存储仅存在于内存，不读取或写入用户的浏览器账本。
+  const data = new Map();
+  Object.defineProperty(window, 'localStorage', { value: {
+    getItem: (key) => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+    removeItem: (key) => data.delete(key),
+  } });
+  const [{ ToastProvider }, { Modal }, { BudgetForm }, { LoanForm }, { IncomeForm }, { GoalForm }, { QuickTransactionModal }, { useStore }, { budgetsWithUsage }] = await Promise.all([
+    import('/src/components/Toast.tsx'), import('/src/components/Modal.tsx'),
+    import('/src/components/forms/BudgetForm.tsx'), import('/src/components/forms/LoanForm.tsx'),
+    import('/src/components/forms/IncomeForm.tsx'), import('/src/components/forms/GoalForm.tsx'),
+    import('/src/components/QuickTransactionModal.tsx'), import('/src/store/useStore.ts'),
+    import('/src/lib/calculations.ts'),
+  ]);
+  const h = React.createElement;
+  function Test() {
+    const [active, setActive] = React.useState('');
+    const state = useStore();
+    const close = () => setActive('');
+    const forms = { 预算: BudgetForm, 贷款: LoanForm, 收入: IncomeForm, 目标: GoalForm, 编辑预算: BudgetForm };
+    const Form = forms[active];
+    const usage = budgetsWithUsage(state.budgets, state.transactions, '2026-10', 0.8);
+    return h('main', { style: { maxWidth: 800, margin: '80px auto', padding: 24 } },
+      h('h1', { className: 'text-2xl font-semibold' }, '新增表单自检'),
+      h('p', { className: 'my-4 text-sm text-muted-foreground' }, '仅内存测试，刷新即清空，不读取真实账本。'),
+      h('div', { className: 'flex flex-wrap gap-2' }, ['预算', '贷款', '收入', '目标', '记账', '编辑预算'].map((label) =>
+        h('button', { key: label, type: 'button', disabled: label === '编辑预算' && !state.budgets.length,
+          className: 'rounded-xl border px-4 py-2', onClick: () => setActive(label) }, label))),
+      h('pre', { id: 'result', style: { whiteSpace: 'pre-wrap', marginTop: 24 } }, JSON.stringify({
+        budgets: state.budgets.map(({ category, amount }) => ({ category, amount })),
+        transactions: state.transactions.map(({ category, amount, type }) => ({ category, amount, type })),
+        loans: state.loans.length, incomes: state.incomeSources.length, goals: state.goals.length,
+        budgetUsage: usage.map(({ category, used, remaining }) => ({ category, used, remaining })),
+      }, null, 2)),
+      h(Modal, { open: !!Form, onClose: close, title: active, maxWidth: 'max-w-xl' }, Form && h(Form, {
+        onClose: close, month: '2026-10', existingCategories: state.budgets.filter((item) => item.month === '2026-10').map((item) => item.category),
+        initial: active === '编辑预算' ? state.budgets[0] : undefined,
+      })),
+      h(QuickTransactionModal, { open: active === '记账', onClose: close }));
+  }
+  createRoot(document.querySelector('#root')).render(h(ToastProvider, null, h(Test)));
+</script>
+</html>

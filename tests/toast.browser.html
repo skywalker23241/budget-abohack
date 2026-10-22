@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>操作提示自检</title>
+<body>
+<div id="root"></div>
+<script type="module">
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import { ToastProvider, useToast } from '/src/components/Toast.tsx';
+  import '/src/index.css';
+  const h = React.createElement;
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  const removed = (element) => new Promise((resolve, reject) => {
+    let frames = 0;
+    function check() {
+      if (!element.isConnected) return resolve();
+      if (++frames > 600) return reject(new Error('动画结束后未清理提示'));
+      requestAnimationFrame(check);
+    }
+    check();
+  });
+
+  function Test() {
+    const toast = useToast();
+    const [result, setResult] = React.useState('不读取或修改任何账本数据。');
+    const [running, setRunning] = React.useState(false);
+    async function run() {
+      setRunning(true);
+      setResult('验证填充倒计时、聚焦暂停、继续关闭、手动关闭与多条独立计时…');
+      try {
+        toast.success('操作已完成');
+        await wait(300);
+        const notice = document.querySelector('.toast-notice');
+        assert(notice?.getAttribute('role') === 'status', '成功提示缺少状态播报');
+        const fill = notice.querySelector('.toast-countdown');
+        notice.querySelector('button').focus();
+        await wait(100);
+        assert(getComputedStyle(fill).animationPlayState === 'paused', '聚焦没有暂停');
+        const time = fill.getAnimations()[0].currentTime;
+        await wait(3200);
+        assert(notice.isConnected, '暂停期间提示提前消失');
+        assert(Math.abs(fill.getAnimations()[0].currentTime - time) < 50, '暂停期间填充仍在减少');
+        document.querySelector('#preview').focus();
+        await removed(notice);
+        assert(!notice.isConnected, '恢复后没有渐隐移除');
+        toast.error('测试错误提示');
+        toast.info('测试信息提示');
+        await wait(100);
+        assert(document.querySelectorAll('.toast-notice').length === 2, '多条提示没有并存');
+        const error = document.querySelector('[role="alert"]');
+        const info = document.querySelector('[role="status"]');
+        info.querySelector('button').focus();
+        await wait(100);
+        error.querySelector('button').click();
+        await removed(error);
+        assert(!error.isConnected && document.querySelectorAll('.toast-notice').length === 1, '手动关闭影响了其他提示');
+        document.querySelector('#preview').focus();
+        await removed(info);
+        assert(!document.querySelector('.toast-notice'), '提示没有独立自动关闭');
+        setResult('PASS：顶部提示、倒计时填充、聚焦暂停超过 3 秒、恢复后渐隐移除、手动关闭、多条独立计时。');
+      } catch (error) { setResult('FAIL：' + error.message); }
+      finally { setRunning(false); }
+    }
+    return h('main', { style: { maxWidth: 640, margin: '120px auto', padding: 24 }, className: 'space-y-4' },
+      h('h1', { className: 'text-2xl font-semibold' }, '操作提示自检'),
+      h('p', null, '仅用于开发验证，不修改账本。'),
+      h('div', { className: 'flex flex-wrap gap-3' },
+        h('button', { id: 'preview', className: 'rounded-xl border p-3', onClick: () => toast.success('记录已保存') }, '显示成功提示'),
+        h('button', { className: 'rounded-xl border p-3', onClick: () => toast.error('导入失败，请检查账单格式') }, '显示错误提示'),
+        h('button', { id: 'run', disabled: running, className: 'rounded-xl border p-3', onClick: run }, '运行自动自检')),
+      h('p', { id: 'result' }, result));
+  }
+  createRoot(document.querySelector('#root')).render(h(ToastProvider, null, h(Test)));
+</script>
+</body>
+</html>

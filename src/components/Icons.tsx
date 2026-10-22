@@ -6,6 +6,26 @@
  */
 export type { Icon, IconProps, IconWeight } from '@phosphor-icons/react';
 
+export { ForkKnife } from '@phosphor-icons/react/dist/csr/ForkKnife';
+export { ShoppingCart } from '@phosphor-icons/react/dist/csr/ShoppingCart';
+export { Bus } from '@phosphor-icons/react/dist/csr/Bus';
+export { TShirt } from '@phosphor-icons/react/dist/csr/TShirt';
+export { FirstAid } from '@phosphor-icons/react/dist/csr/FirstAid';
+export { GameController } from '@phosphor-icons/react/dist/csr/GameController';
+export { Television } from '@phosphor-icons/react/dist/csr/Television';
+export { BookOpen } from '@phosphor-icons/react/dist/csr/BookOpen';
+export { Airplane } from '@phosphor-icons/react/dist/csr/Airplane';
+export { Gift } from '@phosphor-icons/react/dist/csr/Gift';
+export { PawPrint } from '@phosphor-icons/react/dist/csr/PawPrint';
+export { House } from '@phosphor-icons/react/dist/csr/House';
+export { Lightning } from '@phosphor-icons/react/dist/csr/Lightning';
+export { Car } from '@phosphor-icons/react/dist/csr/Car';
+export { Briefcase } from '@phosphor-icons/react/dist/csr/Briefcase';
+export { Medal } from '@phosphor-icons/react/dist/csr/Medal';
+export { Laptop } from '@phosphor-icons/react/dist/csr/Laptop';
+export { ArrowUUpLeft } from '@phosphor-icons/react/dist/csr/ArrowUUpLeft';
+export { ArrowsLeftRight } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
+
 export { SquaresFour as IconDashboard } from '@phosphor-icons/react/dist/csr/SquaresFour';
 export {
   Receipt as IconReceipt,
@@ -45,6 +65,7 @@ export { Warning as IconAlert } from '@phosphor-icons/react/dist/csr/Warning';
 export { Info as IconInfo } from '@phosphor-icons/react/dist/csr/Info';
 export { Bell as IconBell } from '@phosphor-icons/react/dist/csr/Bell';
 export { List as IconMenu } from '@phosphor-icons/react/dist/csr/List';
+export { GithubLogo } from '@phosphor-icons/react/dist/csr/GithubLogo';
 export {
   Check as IconCheck,
   Check,

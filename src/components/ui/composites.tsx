@@ -69,7 +69,7 @@ export function StatCard({
     income: 'text-success',
     expense: 'text-destructive',
     warning: 'text-warning',
-    brand: 'text-foreground',
+    brand: 'text-accent-foreground',
   };
   const iconTone: Record<Tone, string> = {
     default: 'bg-muted text-muted-foreground',
@@ -78,15 +78,8 @@ export function StatCard({
     warning: 'bg-warning/10 text-warning',
     brand: 'bg-secondary text-secondary-foreground',
   };
-  const surfaceTone: Record<Tone, string> = {
-    default: 'bg-card',
-    income: 'bg-gradient-to-br from-card to-success/[0.035]',
-    expense: 'bg-gradient-to-br from-card to-destructive/[0.035]',
-    warning: 'bg-gradient-to-br from-card to-warning/[0.045]',
-    brand: 'bg-gradient-to-br from-card to-foreground/[0.025]',
-  };
   return (
-    <CardPrimitive className={cn('app-enter min-w-0 overflow-hidden p-4 sm:p-5', surfaceTone[tone])}>
+    <CardPrimitive className="app-enter min-w-0 overflow-hidden p-4 sm:p-5">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <p className="min-w-0 break-words text-sm text-muted-foreground">{label}</p>
         {icon && (

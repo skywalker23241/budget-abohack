@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>账单解析浏览器自检（仅虚构数据）</title>
+<h1>账单解析浏览器自检</h1>
+<p>只读取仓库里的虚构测试账单，不访问任何账本，也不写入本地存储。</p>
+<button id="run">运行 CSV / XLSX 解析测试</button>
+<pre id="result" role="status"></pre>
+<script type="module">
+  import { readBillFile, partitionBillEntries } from '/src/lib/billImport.ts';
+  const button = document.querySelector('#run');
+  const result = document.querySelector('#result');
+  button.onclick = async () => {
+    button.disabled = true;
+    result.textContent = '正在验证浏览器文件读取与 Excel Worker…';
+    try {
+      const csv = new File([await (await fetch('/tests/fixtures/alipay.csv')).blob()], 'alipay.csv');
+      const xlsx = new File([await (await fetch('/tests/fixtures/wechat.xlsx')).blob()], 'wechat.xlsx');
+      const alipay = await readBillFile(csv);
+      const wechat = await readBillFile(xlsx);
+      if (alipay.source !== 'alipay' || partitionBillEntries(alipay.entries, []).fresh.length !== 2 || alipay.skipped.length !== 3) throw new Error('CSV 结果不符');
+      if (wechat.source !== 'wechat' || wechat.entries.length !== 2 || wechat.entries[0].transaction.importKey !== 'wechat:order:42000000000000000001') throw new Error('XLSX 结果或长单号精度不符');
+      result.textContent = 'PASS：支付宝 CSV 读取、微信 XLSX 读取、浏览器 Worker、21 位单号精度、重复账单与退款筛选。\nCSV 可新增 2 笔，XLSX 可新增 2 笔。';
+    } catch (error) { result.textContent = 'FAIL：' + error.message; }
+    finally { button.disabled = false; }
+  };
+</script>
+</html>

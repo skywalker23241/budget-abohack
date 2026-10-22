@@ -170,7 +170,6 @@ export function Reports() {
     <>
       <PageHeader
         title="报表分析"
-        subtitle="看清钱花在哪、变化趋势与异常"
         actions={<MonthPicker month={month} onChange={setMonth} />}
       />
 
@@ -181,10 +180,10 @@ export function Reports() {
           value={formatCurrency(Math.abs(r.balance), cur)}
           subtitle={
             r.maxCat
-              ? `最大支出是 ${r.maxCat.category}，占本月支出的 ${formatPercent(
+              ? `最大支出：${r.maxCat.category} · ${formatPercent(
                   r.catTotal > 0 ? r.maxCat.amount / r.catTotal : 0,
-                )}。`
-              : '本月还没有支出记录，报表会在记账后自动生成。'
+                )}`
+              : undefined
           }
           accent={
             r.balance < 0
@@ -204,7 +203,6 @@ export function Reports() {
       <MobileCollapsibleSection
         className="mt-4"
         title="收支明细"
-        subtitle="收入、支出、储蓄率和固定支出结构"
       >
         {/* 1. 月度收支汇总 */}
         <SectionTitle title={`${formatMonthLabel(month)} 收支汇总`} />
@@ -265,7 +263,7 @@ export function Reports() {
       <MobileCollapsibleSection
         className="mt-4"
         title="分类分析"
-        subtitle={r.maxCat ? `最大支出：${r.maxCat.category}` : '分类排行和占比'}
+        subtitle={r.maxCat ? `最大支出：${r.maxCat.category}` : undefined}
       >
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
@@ -331,7 +329,7 @@ export function Reports() {
 
         {/* 3. 衣食住行分析 */}
         <Card className="mt-4">
-          <SectionTitle title="衣食住行分析" subtitle="生活四大维度的开销分布" />
+          <SectionTitle title="衣食住行分析" />
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {r.life.map((g) => (
               <div
@@ -366,7 +364,6 @@ export function Reports() {
       <MobileCollapsibleSection
         className="mt-4"
         title="消费趋势"
-        subtitle="按日、周、月查看变化"
       >
         <Card>
           <SectionTitle

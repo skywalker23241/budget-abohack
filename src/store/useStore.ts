@@ -19,10 +19,12 @@ import { createSampleData } from '@/lib/sampleData';
 import { uid, todayStr, prevMonth } from '@/lib/format';
 import { splitPayment } from '@/lib/calculations';
 import { markLocalDataChanged } from '@/lib/webdavSync';
+import { partitionBillEntries, type ImportedTransaction } from '@/lib/billImport';
 
 interface StoreState extends AppData {
   // ---- 交易 ----
   addTransaction: (t: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  importTransactions: (items: ImportedTransaction[]) => { added: number; duplicates: number };
   updateTransaction: (id: string, patch: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
 
@@ -86,6 +88,26 @@ export const useStore = create<StoreState>()(
             t.id === id ? { ...t, ...patch } : t
           ),
         }));
+      },
+      importTransactions: (items) => {
+        if (get().settings.currency !== 'CNY') throw new Error('请先将账本币种设为 CNY，再导入人民币账单。');
+        if (items.some((item) => !item.importKey || !Number.isFinite(item.amount) || item.amount <= 0 || !['income', 'expense'].includes(item.type))) {
+          throw new Error('导入记录包含无效数据，请重新选择账单。');
+        }
+        const previous = get().transactions;
+        const { fresh, duplicates } = partitionBillEntries(items.map((transaction, row) => ({ row, transaction })), previous);
+        if (!fresh.length) return { added: 0, duplicates: duplicates.length };
+        const createdAt = new Date().toISOString();
+        const additions = fresh.map(({ transaction }) => ({ ...transaction, id: uid('tx_'), createdAt }));
+        try {
+          set({ transactions: [...additions, ...previous] });
+          markLocalDataChanged();
+        } catch {
+          // persist 在 set 后同步写入；存储失败时同时回滚内存与持久化数据。
+          try { set({ transactions: previous }); } catch { /* 写入受限时仍保留回滚后的内存状态。 */ }
+          throw new Error('浏览器存储空间不足或不可写，未导入任何记录。请先备份并释放空间，或分批导入。');
+        }
+        return { added: additions.length, duplicates: duplicates.length };
       },
       deleteTransaction: (id) => {
         markLocalDataChanged();

@@ -8,7 +8,9 @@ import { safeNumber, todayStr, addMonths } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
-import { Field, SelectField } from './fields';
+import { Field } from './fields';
+import { AmountField, IconChoices } from './EntryFields';
+import { InlineDisclosure } from '@/components/MobileCollapsibleSection';
 import { DatePicker } from '@/components/DatePicker';
 
 interface Props {
@@ -21,6 +23,7 @@ export function GoalForm({ initial, onClose }: Props) {
   const updateGoal = useStore((s) => s.updateGoal);
   const toast = useToast();
   const isEdit = !!initial;
+  const [moreOpen, setMoreOpen] = useState(isEdit);
 
   // 默认截止日期设为 1 年后月底
   const defaultDeadline = `${addMonths(todayStr().slice(0, 7), 12)}-28`;
@@ -47,6 +50,7 @@ export function GoalForm({ initial, onClose }: Props) {
     if (safeNumber(currentAmount) < 0) e.currentAmount = '当前金额不能为负';
     if (!deadline) e.deadline = '请选择截止日期';
     if (safeNumber(monthlyPlan) < 0) e.monthlyPlan = '计划投入不能为负';
+    if (e.currentAmount || e.monthlyPlan) setMoreOpen(true);
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -74,37 +78,31 @@ export function GoalForm({ initial, onClose }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} onInvalidCapture={() => setMoreOpen(true)} className="space-y-5">
+      <AmountField label="目标金额" value={targetAmount} onChange={setTargetAmount} error={errors.targetAmount} autoFocus />
+      <Field label="目标类型" required>
+        <IconChoices label="目标类型" value={type} onChange={setType} options={GOAL_TYPES} />
+      </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="目标名称" required error={errors.name}>
+        <Field id="goal-name" label="目标名称" required error={errors.name}>
           <Input
+            id="goal-name"
             placeholder="如：应急储备金"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </Field>
-        <Field label="目标类型" required>
-          <SelectField
-            value={type}
-            onChange={(v) => setType(v as GoalType)}
-            options={GOAL_TYPES}
-          />
+        <Field id="goal-deadline" label="截止日期" required error={errors.deadline}>
+          <DatePicker id="goal-deadline" value={deadline} onChange={setDeadline} aria-invalid={Boolean(errors.deadline)} />
         </Field>
       </div>
 
+      <InlineDisclosure title="更多选项" open={moreOpen} onOpenChange={setMoreOpen}>
+      <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="目标金额" required error={errors.targetAmount}>
+        <Field id="goal-current" label="当前已存" error={errors.currentAmount}>
           <Input
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            value={targetAmount}
-            onChange={(e) => setTargetAmount(e.target.value)}
-          />
-        </Field>
-        <Field label="当前已存金额" error={errors.currentAmount}>
-          <Input
+            id="goal-current"
             type="number"
             min="0"
             step="0.01"
@@ -113,18 +111,9 @@ export function GoalForm({ initial, onClose }: Props) {
             onChange={(e) => setCurrentAmount(e.target.value)}
           />
         </Field>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="截止日期" required error={errors.deadline}>
-          <DatePicker
-            value={deadline}
-            onChange={setDeadline}
-            aria-invalid={Boolean(errors.deadline)}
-          />
-        </Field>
-        <Field label="每月计划投入" error={errors.monthlyPlan}>
+        <Field id="goal-monthly" label="每月计划投入" error={errors.monthlyPlan}>
           <Input
+            id="goal-monthly"
             type="number"
             min="0"
             step="0.01"
@@ -135,16 +124,19 @@ export function GoalForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <Field label="备注">
+      <Field id="goal-note" label="备注">
         <Input
+          id="goal-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="可选"
           maxLength={100}
         />
       </Field>
+      </div>
+      </InlineDisclosure>
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" onClick={onClose}>
           取消
         </Button>

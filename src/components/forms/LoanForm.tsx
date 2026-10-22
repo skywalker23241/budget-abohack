@@ -9,6 +9,8 @@ import { useStore } from '@/store/useStore';
 import { useToast } from '../Toast';
 import { Button, Input } from '@/components/ui';
 import { Field, Toggle, SelectField } from './fields';
+import { AmountField, IconChoices } from './EntryFields';
+import { InlineDisclosure } from '@/components/MobileCollapsibleSection';
 import { DatePicker } from '@/components/DatePicker';
 
 interface Props {
@@ -36,6 +38,7 @@ export function LoanForm({ initial, onClose }: Props) {
   const updateLoan = useStore((s) => s.updateLoan);
   const toast = useToast();
   const isEdit = !!initial;
+  const [moreOpen, setMoreOpen] = useState(isEdit);
 
   const [name, setName] = useState(initial?.name ?? '');
   const [platform, setPlatform] = useState<LoanPlatform>(initial?.platform ?? '银行');
@@ -87,6 +90,7 @@ export function LoanForm({ initial, onClose }: Props) {
     if (safeNumber(monthlyPayment) < 0) e.monthlyPayment = '月供不能为负';
     if (!startDate) e.startDate = '请选择开始日期';
     if (safeNumber(termMonths) <= 0) e.termMonths = '期限必须大于 0';
+    if (e.remaining || e.startDate) setMoreOpen(true);
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -121,17 +125,23 @@ export function LoanForm({ initial, onClose }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} onInvalidCapture={() => setMoreOpen(true)} className="space-y-5">
+      <AmountField label="初始本金" value={principal} onChange={setPrincipal} error={errors.principal} autoFocus />
+      <Field label="贷款类型" required>
+        <IconChoices label="贷款类型" value={type} onChange={setType} options={LOAN_TYPES} type="loan_repayment" className="sm:grid-cols-5" />
+      </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="贷款名称" required error={errors.name}>
+        <Field id="loan-name" label="贷款名称" required error={errors.name}>
           <Input
+            id="loan-name"
             placeholder="如：房贷 / 车贷"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </Field>
-        <Field label="借贷平台" required>
+        <Field id="loan-platform" label="借贷平台" required>
           <SelectField
+            id="loan-platform"
             value={platform}
             onChange={(v) => handlePlatformChange(v as LoanPlatform)}
             options={LOAN_PLATFORMS}
@@ -139,46 +149,10 @@ export function LoanForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="贷款类型" required>
-          <SelectField
-            value={type}
-            onChange={(v) => setType(v as LoanType)}
-            options={LOAN_TYPES}
-          />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="初始本金" required error={errors.principal}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Field id="loan-rate" label="年利率 (%)" error={errors.annualRate}>
           <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={principal}
-            onChange={(e) => setPrincipal(e.target.value)}
-            placeholder="0.00"
-          />
-        </Field>
-        <Field
-          label="当前剩余本金"
-          error={errors.remaining}
-          hint={!isEdit ? '留空则默认等于初始本金' : undefined}
-        >
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={remaining}
-            onChange={(e) => setRemaining(e.target.value)}
-            placeholder="0.00"
-          />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="年利率 (%)" error={errors.annualRate}>
-          <Input
+            id="loan-rate"
             type="number"
             min="0"
             step="0.01"
@@ -186,8 +160,9 @@ export function LoanForm({ initial, onClose }: Props) {
             onChange={(e) => setAnnualRate(e.target.value)}
           />
         </Field>
-        <Field label="月供金额" error={errors.monthlyPayment}>
+        <Field id="loan-monthly" label="月供金额" error={errors.monthlyPayment}>
           <Input
+            id="loan-monthly"
             type="number"
             min="0"
             step="0.01"
@@ -196,11 +171,21 @@ export function LoanForm({ initial, onClose }: Props) {
             placeholder="0.00"
           />
         </Field>
+        <Field id="loan-term" label="期限（月）" required error={errors.termMonths}>
+          <Input id="loan-term" type="number" min="1" value={termMonths} onChange={(event) => setTermMonths(event.target.value)} />
+        </Field>
       </div>
 
+      <InlineDisclosure title="更多选项" open={moreOpen} onOpenChange={setMoreOpen}>
+      <div className="space-y-4">
+      <Field id="loan-remaining" label="当前剩余本金" error={errors.remaining}>
+        <Input id="loan-remaining" type="number" min="0" step="0.01" value={remaining}
+          onChange={(event) => setRemaining(event.target.value)} placeholder={isEdit ? '0.00' : '留空则等于初始本金'} />
+      </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="还款日（每月几号）">
+        <Field id="loan-repayment-day" label="每月还款日">
           <Input
+            id="loan-repayment-day"
             type="number"
             min="1"
             max="31"
@@ -208,8 +193,9 @@ export function LoanForm({ initial, onClose }: Props) {
             onChange={(e) => setRepaymentDay(e.target.value)}
           />
         </Field>
-        <Field label="开始日期" required error={errors.startDate}>
+        <Field id="loan-start" label="开始日期" required error={errors.startDate}>
           <DatePicker
+            id="loan-start"
             value={startDate}
             onChange={setStartDate}
             aria-invalid={Boolean(errors.startDate)}
@@ -217,27 +203,19 @@ export function LoanForm({ initial, onClose }: Props) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="贷款期限（月）" required error={errors.termMonths}>
+        <Field id="loan-paid" label="已还期数">
           <Input
-            type="number"
-            min="1"
-            value={termMonths}
-            onChange={(e) => setTermMonths(e.target.value)}
-          />
-        </Field>
-        <Field label="已还期数">
-          <Input
+            id="loan-paid"
             type="number"
             min="0"
             value={paidPeriods}
             onChange={(e) => setPaidPeriods(e.target.value)}
           />
         </Field>
-      </div>
 
-      <Field label="备注">
+      <Field id="loan-note" label="备注">
         <Input
+          id="loan-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="可选"
@@ -246,8 +224,10 @@ export function LoanForm({ initial, onClose }: Props) {
       </Field>
 
       <Toggle checked={remindEnabled} onChange={setRemindEnabled} label="启用还款提醒" />
+      </div>
+      </InlineDisclosure>
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" onClick={onClose}>
           取消
         </Button>

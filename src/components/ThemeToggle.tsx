@@ -36,7 +36,7 @@ export function ThemeToggle({ className }: { className?: string }) {
 export function ThemeSegmented() {
   const { theme, setTheme } = useTheme();
   return (
-    <div className="grid w-full grid-cols-3 rounded-xl border border-border/70 bg-muted/35 p-1">
+    <div role="group" aria-label="外观主题" className="grid w-full grid-cols-3 gap-2">
       {OPTIONS.map(({ value, label, Icon }) => {
         const active = theme === value;
         return (
@@ -44,11 +44,12 @@ export function ThemeSegmented() {
             key={value}
             type="button"
             onClick={() => setTheme(value)}
+            aria-pressed={active}
             className={cn(
-              'inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-medium transition-colors sm:text-sm',
+              'inline-flex min-w-0 flex-col items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-1.5 py-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               active
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                ? 'border-primary/70 bg-primary/15 text-accent-foreground'
+                : 'border-border/60 bg-background/40 text-muted-foreground hover:border-primary/40 hover:bg-accent/50 hover:text-accent-foreground',
             )}
           >
             <Icon className="h-4 w-4" />

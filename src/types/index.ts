@@ -34,6 +34,9 @@ export interface Transaction {
   loanId?: string;
   /** 创建时间（ISO 字符串） */
   createdAt: string;
+  /** 外部账单来源与稳定去重键；编辑记录时保留。 */
+  importSource?: 'alipay' | 'wechat';
+  importKey?: string;
 }
 
 // ---------- 预算 ----------

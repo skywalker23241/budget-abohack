@@ -9,7 +9,7 @@ type SummaryMeta = {
 type AccentTone = 'default' | 'success' | 'warning' | 'danger' | 'info';
 
 const accentTone: Record<AccentTone, string> = {
-  default: 'bg-white/70',
+  default: 'bg-primary',
   success: 'bg-success',
   warning: 'bg-warning',
   danger: 'bg-destructive',
@@ -38,7 +38,7 @@ export function AppSummaryCard({
   return (
     <section
       className={cn(
-        'app-pop app-card-motion relative isolate overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-zinc-50 shadow-[0_20px_55px_-38px_rgba(9,9,11,.8)] sm:p-6 dark:border-zinc-800 dark:bg-zinc-900',
+        'glass-card app-pop app-card-motion relative isolate overflow-hidden rounded-2xl p-5 text-foreground sm:p-6',
         className,
       )}
     >
@@ -47,7 +47,7 @@ export function AppSummaryCard({
         aria-hidden="true"
         style={{
           background:
-            'radial-gradient(circle at 5% 0%, rgba(52,211,153,.12), transparent 30%), radial-gradient(circle at 100% 100%, rgba(99,102,241,.11), transparent 34%)',
+            'radial-gradient(circle at 5% 0%, hsl(var(--primary) / .12), transparent 30%), radial-gradient(circle at 100% 100%, var(--ambient-blue), transparent 34%)',
         }}
       />
       <div
@@ -60,14 +60,14 @@ export function AppSummaryCard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           {eyebrow && (
-            <p className="text-xs font-medium text-zinc-400">{eyebrow}</p>
+            <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
           )}
-          <p className="mt-1 text-sm text-zinc-300">{title}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{title}</p>
           <div className="mt-2 break-words text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
             {value}
           </div>
           {subtitle && (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {subtitle}
             </p>
           )}
@@ -76,14 +76,14 @@ export function AppSummaryCard({
       </div>
 
       {meta.length > 0 && (
-        <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/50 bg-border/40 sm:grid-cols-3">
           {meta.map((item) => (
             <div
               key={item.label}
-              className="app-press min-w-0 bg-zinc-950/75 px-3.5 py-3 hover:bg-zinc-900/85"
+              className="app-press min-w-0 bg-card/50 px-3.5 py-3 hover:bg-accent/50"
             >
-              <p className="truncate text-xs text-zinc-400">{item.label}</p>
-              <p className="mt-1 break-words text-sm font-semibold text-zinc-50 [overflow-wrap:anywhere]">
+              <p className="truncate text-xs text-muted-foreground">{item.label}</p>
+              <p className="mt-1 break-words text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
                 {item.value}
               </p>
             </div>

@@ -182,7 +182,7 @@ export function DatePicker({
           disabled={disabled}
           aria-invalid={ariaInvalid}
           className={cn(
-            'app-press flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-card px-3 text-left text-sm shadow-[0_1px_2px_rgba(15,23,42,.03)] transition-[border-color,box-shadow,background-color] hover:border-foreground/25 focus-visible:border-ring/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:bg-muted/60 disabled:opacity-60',
+            'app-press flex h-10 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-card/60 px-3 text-left text-sm shadow-[0_1px_2px_rgba(15,23,42,.03)] transition-[border-color,box-shadow,background-color] hover:border-foreground/25 focus-visible:border-ring/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:bg-muted/60 disabled:opacity-60',
             ariaInvalid && 'border-destructive/60 focus-visible:border-destructive focus-visible:ring-destructive/20',
             className,
           )}
@@ -201,7 +201,7 @@ export function DatePicker({
           align="start"
           sideOffset={8}
           collisionPadding={8}
-          className="pointer-events-auto z-[70] w-[min(20rem,calc(100vw-1rem))] rounded-2xl border border-border/70 bg-popover p-3 text-popover-foreground shadow-[0_24px_65px_-25px_rgba(15,23,42,.42)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          className="pointer-events-auto z-[70] w-[min(20rem,calc(100vw-1rem))] rounded-2xl border glass-popup p-3 text-popover-foreground outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
           <div className="flex items-center justify-between px-1 pb-3">
             <div>
@@ -280,7 +280,7 @@ export function DatePicker({
                     'app-press relative flex aspect-square items-center justify-center rounded-lg text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/30',
                     outsideMonth ? 'text-muted-foreground/40' : 'text-foreground',
                     !dateDisabled && !selected && 'hover:bg-accent hover:text-accent-foreground',
-                    selected && 'bg-foreground text-background shadow-sm hover:bg-foreground/90',
+                    selected && 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
                     dateDisabled && 'cursor-not-allowed text-muted-foreground/25',
                   )}
                 >

@@ -56,7 +56,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
             cn(
               'app-press group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium',
               isActive
-                ? 'bg-foreground text-background shadow-sm [&_svg]:scale-105'
+                ? 'glass-nav-active [&_svg]:scale-105'
                 : 'text-muted-foreground hover:bg-accent/80 hover:text-accent-foreground',
             )
           }
@@ -84,17 +84,17 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
 function Brand() {
   return (
     <div className="flex min-w-0 items-center gap-3 px-4 py-5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] bg-foreground p-1.5 shadow-sm">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] shadow-sm">
         <img
           src="/logo.svg"
           alt=""
-          className="h-full w-full rounded-lg"
+          className="h-full w-full"
           aria-hidden="true"
         />
       </span>
       <div className="min-w-0 leading-tight">
-        <p className="truncate text-sm font-semibold tracking-tight text-foreground">个人预算</p>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Finance workspace</p>
+        <p className="truncate text-sm font-semibold tracking-tight text-foreground">PennyPeek</p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">个人预算记账助手</p>
       </div>
     </div>
   );
@@ -110,9 +110,9 @@ export function Layout() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-dvh min-w-0 bg-background">
+    <div className="min-h-dvh min-w-0">
       {/* 桌面侧边栏 */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border/70 bg-card/95 shadow-[8px_0_35px_-32px_rgba(15,23,42,.35)] backdrop-blur-xl lg:flex">
+      <aside className="glass-panel fixed bottom-5 left-5 top-5 z-30 hidden w-[13.75rem] flex-col rounded-3xl lg:flex">
         <Brand />
         <NavItems />
         <div className="mt-auto border-t border-border/70 px-3 py-3">
@@ -132,7 +132,7 @@ export function Layout() {
       </aside>
 
       {/* 移动端顶栏 */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border/70 bg-background/85 px-4 py-3 backdrop-blur-xl lg:hidden">
+      <header className="glass-panel sticky top-0 z-20 flex items-center justify-between px-4 py-3 lg:hidden">
         <div className="flex min-w-0 items-center gap-2">
           <img
             src="/logo.svg"
@@ -141,7 +141,7 @@ export function Layout() {
             aria-hidden="true"
           />
           <span className="truncate text-sm font-semibold text-foreground">
-            个人预算记账助手
+            PennyPeek
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -163,7 +163,7 @@ export function Layout() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm app-enter"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="app-scroll-region absolute inset-y-0 left-0 flex max-h-dvh w-64 flex-col overflow-y-auto bg-card pb-[env(safe-area-inset-bottom)] shadow-xl app-enter">
+          <div className="glass-popup app-scroll-region absolute inset-y-0 left-0 flex max-h-dvh w-64 flex-col overflow-y-auto pb-[env(safe-area-inset-bottom)] shadow-xl app-enter">
             <div className="flex items-center justify-between">
               <Brand />
               <button
@@ -190,7 +190,7 @@ export function Layout() {
         </div>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur lg:hidden">
+      <nav className="glass-panel fixed inset-x-2 bottom-2 z-20 rounded-3xl px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 items-end gap-1">
           {MOBILE_NAV_ITEMS.slice(0, 2).map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -218,7 +218,7 @@ export function Layout() {
             className="app-press -mt-6 flex flex-col items-center gap-1 text-[11px] font-medium text-foreground"
             aria-label="快速记账"
           >
-            <span className="app-soft-pulse flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-background shadow-lg ring-4 ring-background">
+            <span className="glass-button flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground ring-4 ring-background">
               <IconPlus className="h-6 w-6" />
             </span>
             <span>记账</span>

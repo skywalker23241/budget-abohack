@@ -2,6 +2,7 @@
  * 收入管理页面：管理收入来源、记录到账、收入趋势与来源占比。
  */
 import { useMemo, useState } from 'react';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -37,7 +38,6 @@ import {
   IconEdit,
   IconTrash,
   IconCheck,
-  IconArrowUp,
 } from '@/components/Icons';
 
 export function Income() {
@@ -129,7 +129,6 @@ export function Income() {
     <>
       <PageHeader
         title="收入管理"
-        subtitle="管理收入来源，记录每月到账"
         actions={
           <Button onClick={openAdd}>
             <IconPlus className="h-4 w-4" />
@@ -144,10 +143,8 @@ export function Income() {
         value={formatCurrency(stats.total, cur)}
         subtitle={
           stats.total > 0
-            ? `固定收入占 ${formatPercent(stats.fixed / stats.total)}，最近一笔为 ${
-                stats.arrivals[0]?.category ?? '收入'
-              }。`
-            : '添加工资、副业或投资收入来源后，可以一键记录到账。'
+            ? `固定收入占 ${formatPercent(stats.fixed / stats.total)}`
+            : undefined
         }
         accent={stats.total > 0 ? 'success' : 'default'}
         meta={[
@@ -176,7 +173,6 @@ export function Income() {
       <MobileCollapsibleSection
         className="mt-4"
         title="收入统计"
-        subtitle="趋势和来源占比"
       >
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
@@ -241,7 +237,7 @@ export function Income() {
       >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <SectionTitle title="收入来源" subtitle="点击「到账」快速记一笔收入" />
+          <SectionTitle title="收入来源" />
           {incomeSources.length === 0 ? (
             <EmptyState
               icon={<IconCoins className="h-6 w-6" />}
@@ -261,6 +257,9 @@ export function Income() {
                   key={s.id}
                   className="flex items-center gap-3 rounded-lg border px-3 py-2.5"
                 >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
+                    <CategoryIcon category={s.type} type="income" />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <span className="min-w-0 break-words font-medium text-foreground">
@@ -304,7 +303,7 @@ export function Income() {
         </Card>
 
         <Card>
-          <SectionTitle title="收入到账记录" subtitle="最近的收入流水" />
+          <SectionTitle title="收入到账记录" />
           {stats.arrivals.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">暂无收入记录</p>
           ) : (
@@ -312,7 +311,7 @@ export function Income() {
               {stats.arrivals.map((t) => (
                 <li key={t.id} className="flex items-center gap-3 py-2.5">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
-                    <IconArrowUp className="h-4 w-4" />
+                    <CategoryIcon category={t.category} type="income" className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
@@ -341,7 +340,7 @@ export function Income() {
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? '编辑收入来源' : '新增收入来源'}
-        maxWidth="max-w-md"
+        maxWidth="max-w-xl"
       >
         <IncomeForm initial={editing ?? undefined} onClose={() => setShowForm(false)} />
       </Modal>

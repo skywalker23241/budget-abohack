@@ -151,7 +151,6 @@ export function Goals() {
     <>
       <PageHeader
         title="财务目标"
-        subtitle="设定目标，追踪每一步进展"
         actions={
           <Button data-tour="goal-add" onClick={openAdd}>
             <IconPlus className="h-4 w-4" />
@@ -166,13 +165,10 @@ export function Goals() {
         value={goals.length > 0 ? formatCurrency(summary.saved, cur) : '先定一个'}
         subtitle={
           goals.length === 0
-            ? '可以从应急金、旅行、买房首付、提前还款这类目标开始。'
+            ? undefined
             : behindGoals > 0
-              ? `${behindGoals} 个目标进度落后，建议优先调整月投入或截止时间。`
-              : `整体完成 ${formatPercent(summary.progress)}，本月建议投入 ${formatCurrency(
-                  summary.suggested,
-                  cur,
-                )}。`
+              ? `${behindGoals} 个目标进度落后`
+              : `已完成 ${formatPercent(summary.progress)}`
         }
         accent={
           summary.progress >= 1
@@ -227,7 +223,7 @@ export function Goals() {
           <EmptyState
             icon={<IconTarget className="h-6 w-6" />}
             title="还没有财务目标"
-            description="设定一个储蓄、应急金或还贷目标，让攒钱更有方向"
+            description="添加储蓄、应急金或还贷目标"
             action={
               <Button onClick={openAdd}>
                 <IconPlus className="h-4 w-4" />
@@ -339,6 +335,7 @@ export function Goals() {
         open={showForm}
         onClose={() => setShowForm(false)}
         title={editing ? '编辑目标' : '新增目标'}
+        maxWidth="max-w-xl"
       >
         <GoalForm initial={editing ?? undefined} onClose={() => setShowForm(false)} />
       </Modal>

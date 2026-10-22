@@ -12,6 +12,7 @@ import {
   SelectItem,
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { CategoryIcon } from '@/components/CategoryIcon';
 
 export function Field({
   label,
@@ -19,6 +20,7 @@ export function Field({
   error,
   children,
   hint,
+  id,
   className = '',
 }: {
   label: string;
@@ -26,19 +28,20 @@ export function Field({
   error?: string;
   children: ReactNode;
   hint?: string;
+  id?: string;
   className?: string;
 }) {
   return (
     <div className={cn('min-w-0', className)}>
-      <Label className="mb-1.5 flex break-words">
+      <Label htmlFor={id} className="mb-1.5 flex break-words">
         {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
+        {required && <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>}
       </Label>
       {children}
       {hint && !error && (
         <p className="mt-1 break-words text-xs text-muted-foreground">{hint}</p>
       )}
-      {error && <p className="mt-1 break-words text-xs text-destructive">{error}</p>}
+      {error && <p id={id ? `${id}-error` : undefined} className="mt-1 break-words text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -109,6 +112,7 @@ export function SelectField({
   placeholder,
   id,
   className,
+  categoryIcons = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -117,6 +121,7 @@ export function SelectField({
   placeholder?: string;
   id?: string;
   className?: string;
+  categoryIcons?: boolean;
 }) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
@@ -128,7 +133,9 @@ export function SelectField({
           const opt = typeof o === 'string' ? { value: o, label: o } : o;
           return (
             <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
+              {categoryIcons && opt.value !== 'all' ? (
+                <span className="inline-flex items-center gap-2"><CategoryIcon category={opt.label} className="h-4 w-4" />{opt.label}</span>
+              ) : opt.label}
             </SelectItem>
           );
         })}

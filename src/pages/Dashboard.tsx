@@ -3,6 +3,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { useStore } from '@/store/useStore';
 import {
   totalIncome,
@@ -124,8 +125,8 @@ function MetricRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="text-lg font-semibold text-white">{Math.round(value * 100)}%</span>
-        <span className="text-[10px] text-zinc-400">{label}</span>
+        <span className="text-lg font-semibold text-foreground">{Math.round(value * 100)}%</span>
+        <span className="text-[10px] text-muted-foreground">{label}</span>
       </div>
     </div>
   );
@@ -143,17 +144,17 @@ function OverviewMetric({
   icon: ReactNode;
 }) {
   return (
-    <div className="group min-w-0 rounded-xl border border-white/8 bg-white/[0.045] p-3.5 transition-colors hover:bg-white/[0.075]">
-      <div className="flex items-center gap-2 text-xs text-zinc-400">
-        <span className="text-zinc-500">{icon}</span>
+    <div className="group min-w-0 rounded-xl border border-border/50 bg-card/45 p-3.5 transition-colors hover:bg-accent/50">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="text-muted-foreground">{icon}</span>
         {label}
       </div>
       <p
         className={cn(
           'mt-2 break-words text-lg font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-xl',
-          tone === 'income' && 'text-emerald-300',
-          tone === 'expense' && 'text-rose-300',
-          tone === 'default' && 'text-white',
+          tone === 'income' && 'text-success',
+          tone === 'expense' && 'text-destructive',
+          tone === 'default' && 'text-foreground',
         )}
       >
         {value}
@@ -163,26 +164,18 @@ function OverviewMetric({
 }
 
 function DashboardSectionHeading({
-  eyebrow,
   title,
-  description,
   action,
 }: {
-  eyebrow: string;
   title: string;
-  description: string;
   action?: ReactNode;
 }) {
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
           {title}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -306,22 +299,21 @@ export function Dashboard() {
   const savingsOnTrack = data.rate >= settings.savingsRateTarget / 100;
   const statusSummary =
     data.bSummary.total <= 0
-      ? '建立预算后，可以得到更准确的每日可花额度。'
+      ? '预算未设置'
       : data.bSummary.remaining < 0
-        ? '本月预算已超支，建议优先复盘高支出分类。'
+        ? '本月预算已超支'
         : data.budgetWatch.length > 0
           ? data.budgetWatch[0].status === 'exceeded'
-            ? `${data.budgetWatch[0].category} 已经超出预算，建议检查相关支出。`
-            : `${data.budgetWatch[0].category} 接近预算上限，需要留意接下来的消费。`
+            ? `${data.budgetWatch[0].category} 已超支`
+            : `${data.budgetWatch[0].category} 接近上限`
           : savingsOnTrack
-            ? '预算节奏稳定，储蓄目标也在计划内。'
-            : '预算执行平稳，储蓄率距离目标还有提升空间。';
+            ? '储蓄目标达成'
+            : '储蓄率未达目标';
 
   return (
     <>
       <PageHeader
         title="财务总览"
-        subtitle={`${formatMonthLabel(month)} · 收支、预算与长期目标`}
         actions={
           <>
             <MonthPicker month={month} onChange={setMonth} />
@@ -338,29 +330,29 @@ export function Dashboard() {
       />
 
       {/* 第一层：核心财务结论 */}
-      <section className="relative isolate overflow-hidden rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-5 text-white shadow-[0_24px_70px_-38px_rgba(9,9,11,0.75)] sm:p-7 lg:p-8">
+      <section className="glass-card relative isolate overflow-hidden rounded-[1.5rem] p-5 text-foreground sm:p-7 lg:p-8">
         <div
           className="pointer-events-none absolute inset-0 -z-10 opacity-90"
           aria-hidden="true"
           style={{
             background:
-              'radial-gradient(circle at 12% 0%, rgba(52,211,153,.16), transparent 32%), radial-gradient(circle at 92% 100%, rgba(99,102,241,.13), transparent 35%)',
+              'radial-gradient(circle at 12% 0%, hsl(var(--primary) / .16), transparent 32%), radial-gradient(circle at 92% 100%, var(--ambient-blue), transparent 35%)',
           }}
         />
 
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-zinc-400">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,.12)]" />
-            {isCurrentMonth ? '数据已同步至本月' : '历史月份回看'}
+            {formatMonthLabel(month)}
           </div>
           <span
             className={cn(
               'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
               data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
-                ? 'border-rose-400/25 bg-rose-400/10 text-rose-200'
+                ? 'border-rose-400/25 bg-rose-400/10 text-destructive'
                 : savingsOnTrack
-                  ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
-                  : 'border-amber-400/25 bg-amber-400/10 text-amber-200',
+                  ? 'border-emerald-400/25 bg-emerald-400/10 text-success'
+                  : 'border-amber-400/25 bg-amber-400/10 text-warning',
             )}
           >
             {data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
@@ -373,16 +365,16 @@ export function Dashboard() {
 
         <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)] xl:items-end">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-zinc-400">
+            <p className="text-sm font-medium text-muted-foreground">
               {data.bSummary.total > 0 ? '本月还可支配' : '本月结余'}
             </p>
-            <p className="mt-2 break-words text-[2.65rem] font-semibold leading-none tracking-[-0.045em] text-white [overflow-wrap:anywhere] sm:text-6xl">
+            <p className="mt-2 break-words text-[2.65rem] font-semibold leading-none tracking-[-0.045em] text-foreground [overflow-wrap:anywhere] sm:text-6xl">
               {formatCurrency(primaryAmount, cur)}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="text-sm text-zinc-400">{statusSummary}</span>
+              <span className="text-sm text-muted-foreground">{statusSummary}</span>
               {data.bSummary.total > 0 && (
-                <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-zinc-300">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-muted-foreground">
                   日均可花 {formatCurrency(data.dailyAvailable, cur)}
                 </span>
               )}
@@ -410,7 +402,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-5 backdrop-blur-sm">
+          <div className="rounded-2xl border border-border/50 bg-card/40 p-5 backdrop-blur-sm">
             <div className="flex items-center gap-5">
               <MetricRing
                 value={data.bSummary.usageRate}
@@ -418,17 +410,14 @@ export function Dashboard() {
                 tone={budgetTone}
               />
               <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
-                  Spending pace
-                </p>
-                <p className="mt-1 text-lg font-semibold text-white">
+                <p className="text-lg font-semibold text-foreground">
                   {data.bSummary.usageRate >= 1
                     ? '预算已经超额'
                     : data.bSummary.usageRate >= warnRate
                       ? '接近预算上限'
                       : '消费节奏健康'}
                 </p>
-                <p className="mt-1 text-xs leading-5 text-zinc-400">
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
                   已使用 {formatCurrency(data.bSummary.used, cur)}
                   <br />
                   总预算 {formatCurrency(data.bSummary.total, cur)}
@@ -436,10 +425,10 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="mt-5 border-t border-white/10 pt-4">
+            <div className="mt-5 border-t border-border/50 pt-4">
               <div className="mb-2 flex items-center justify-between text-xs">
-                <span className="text-zinc-400">储蓄率</span>
-                <span className={savingsOnTrack ? 'text-emerald-300' : 'text-amber-300'}>
+                <span className="text-muted-foreground">储蓄率</span>
+                <span className={savingsOnTrack ? 'text-success' : 'text-warning'}>
                   {formatPercent(data.rate)} / 目标 {settings.savingsRateTarget}%
                 </span>
               </div>
@@ -450,7 +439,7 @@ export function Dashboard() {
                     : data.rate
                 }
                 tone={savingsOnTrack ? 'emerald' : 'amber'}
-                className="h-1.5 bg-white/10"
+                className="h-1.5 bg-muted/60"
               />
             </div>
           </div>
@@ -460,9 +449,7 @@ export function Dashboard() {
       {/* 第二层：现金流与支出结构 */}
       <section className="mt-9">
         <DashboardSectionHeading
-          eyebrow="Cash flow"
           title="现金流与支出结构"
-          description="先看趋势，再定位本月钱主要花在了哪里。"
           action={
             <Button variant="ghost" size="sm" asChild>
               <Link to="/app/reports">
@@ -474,23 +461,17 @@ export function Dashboard() {
         />
 
         <div className="grid min-w-0 gap-4 lg:grid-cols-12">
-          <Card className="rounded-2xl border-border/70 p-5 shadow-[0_12px_35px_-28px_rgba(15,23,42,.45)] sm:p-6 lg:col-span-8">
+          <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-8">
             <SectionTitle
               title="最近 7 天收支趋势"
-              subtitle="观察短期现金流变化，识别异常波动"
-              action={
-                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                  近 7 天
-                </span>
-              }
             />
             <IncomeExpenseTrend data={data.trend} currency={cur} height={286} />
           </Card>
 
-          <Card className="rounded-2xl border-border/70 p-5 shadow-[0_12px_35px_-28px_rgba(15,23,42,.45)] sm:p-6 lg:col-span-4">
+          <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-4">
             <SectionTitle
               title="支出结构"
-              subtitle={data.expense > 0 ? `本月支出 ${formatCurrency(data.expense, cur)}` : '本月暂无支出'}
+              subtitle={data.expense > 0 ? `本月支出 ${formatCurrency(data.expense, cur)}` : undefined}
             />
             <CategoryDonut data={data.pieData} currency={cur} height={230} />
             {data.pieData.length > 0 && (
@@ -523,9 +504,7 @@ export function Dashboard() {
       {/* 第三层：预算、贷款、目标专题 */}
       <section className="mt-9">
         <DashboardSectionHeading
-          eyebrow="Planning"
-          title="计划与长期责任"
-          description="把预算、债务和储蓄目标放在同一个决策视图中。"
+          title="预算、贷款与目标"
         />
 
         <div className="grid min-w-0 gap-4 lg:grid-cols-12">
@@ -660,9 +639,6 @@ export function Dashboard() {
                 财务健康
               </p>
               <p className="mt-1 text-lg font-semibold text-foreground">{data.health.grade}</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                综合储蓄、预算、债务和大额支出评估
-              </p>
             </div>
           </div>
           <div className="border-t border-border/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
@@ -687,9 +663,7 @@ export function Dashboard() {
       {/* 第四层：最近动态 */}
       <section className="mt-9">
         <DashboardSectionHeading
-          eyebrow="Activity"
-          title="最近动态"
-          description={isCurrentMonth ? '最新的收支记录与支付信息。' : '最新收支记录，不限于当前查看月份。'}
+          title={isCurrentMonth ? '最近动态' : '最近动态（全部月份）'}
           action={
             <Button variant="outline" size="sm" asChild>
               <Link to="/app/transactions">
@@ -729,11 +703,7 @@ export function Dashboard() {
                           : 'bg-muted text-muted-foreground group-hover:bg-destructive/10 group-hover:text-destructive',
                       )}
                     >
-                      {isIncome ? (
-                        <IconArrowUp className="h-4 w-4" />
-                      ) : (
-                        <IconArrowDown className="h-4 w-4" />
-                      )}
+                      <CategoryIcon category={t.category} type={t.type} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -756,9 +726,6 @@ export function Dashboard() {
                       >
                         {isIncome ? '+' : '-'}
                         {formatCurrency(t.amount, cur)}
-                      </p>
-                      <p className="mt-0.5 hidden text-[11px] text-muted-foreground sm:block">
-                        {isIncome ? '已入账' : '已支出'}
                       </p>
                     </div>
                   </li>

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import type { PaymentMethod, TransactionType } from '@/types';
 import {
   INCOME_CATEGORIES,
+  EXPENSE_CATEGORIES,
   PAYMENT_METHODS,
 } from '@/lib/constants';
 import { safeNumber, todayStr } from '@/lib/format';
+import { getExpenseCategories } from '@/lib/categories';
 import { useStore } from '@/store/useStore';
 import { Modal } from '@/components/Modal';
 import { Button, Input } from '@/components/ui';
@@ -13,6 +15,7 @@ import { InlineDisclosure } from '@/components/MobileCollapsibleSection';
 import { useToast } from '@/components/Toast';
 import { cn } from '@/lib/utils';
 import { DatePicker } from '@/components/DatePicker';
+import { AmountField, IconChoices } from '@/components/forms/EntryFields';
 
 const QUICK_EXPENSE_CATEGORIES = [
   '餐饮',
@@ -27,11 +30,6 @@ const QUICK_EXPENSE_CATEGORIES = [
   '其他支出',
 ] as const;
 
-function categoryOptions(type: TransactionType): readonly string[] {
-  if (type === 'income') return INCOME_CATEGORIES;
-  return QUICK_EXPENSE_CATEGORIES;
-}
-
 function defaultCategory(type: TransactionType): string {
   return type === 'income' ? INCOME_CATEGORIES[0] : '餐饮';
 }
@@ -44,6 +42,8 @@ export function QuickTransactionModal({
   onClose: () => void;
 }) {
   const addTransaction = useStore((s) => s.addTransaction);
+  const budgets = useStore((s) => s.budgets);
+  const transactions = useStore((s) => s.transactions);
   const toast = useToast();
 
   const [type, setType] = useState<TransactionType>('expense');
@@ -54,7 +54,10 @@ export function QuickTransactionModal({
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
-  const categories = useMemo(() => categoryOptions(type), [type]);
+  const categories = useMemo(() => type === 'income' ? INCOME_CATEGORIES : [
+    ...QUICK_EXPENSE_CATEGORIES,
+    ...getExpenseCategories(budgets, transactions).filter((name) => !EXPENSE_CATEGORIES.some((builtIn) => builtIn === name)),
+  ], [type, budgets, transactions]);
   const isIncome = type === 'income';
 
   function handleTypeChange(nextType: TransactionType) {
@@ -125,8 +128,8 @@ export function QuickTransactionModal({
                   'app-press',
                   active
                     ? item === 'income'
-                      ? 'bg-success text-white shadow-sm'
-                      : 'bg-foreground text-background shadow-sm'
+                      ? 'glass-button bg-success text-success-foreground'
+                      : 'glass-button bg-primary/80 text-primary-foreground'
                     : 'text-muted-foreground hover:bg-background hover:text-foreground',
                 )}
               >
@@ -136,50 +139,14 @@ export function QuickTransactionModal({
           })}
         </div>
 
-        <div>
-          <div className="flex items-center rounded-md border bg-background px-4 py-3 focus-within:ring-2 focus-within:ring-ring">
-            <span className="mr-2 text-xl font-semibold text-muted-foreground">¥</span>
-            <input
-              autoFocus
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value);
-                setError('');
-              }}
-              placeholder="0.00"
-              className="h-12 min-w-0 flex-1 bg-transparent text-4xl font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-          {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
-        </div>
+        <AmountField label="金额" value={amount} onChange={(value) => { setAmount(value); setError(''); }} error={error} autoFocus />
 
         <div>
           <p className="mb-2 text-sm font-medium text-foreground">分类</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-            {categories.map((item) => {
-              const active = category === item;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setCategory(item)}
-                  className={cn(
-                    'h-10 rounded-md border px-2 text-sm font-medium transition-colors',
-                    'app-press',
-                    active
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  )}
-                >
-                  {item}
-                </button>
-              );
-            })}
-          </div>
+          <IconChoices label="分类" value={category} options={categories} onChange={setCategory} type={type} className="sm:grid-cols-5" />
         </div>
 
-        <InlineDisclosure title="更多选项" subtitle="日期、支付方式、备注">
+        <InlineDisclosure title="更多选项">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <p className="mb-1.5 text-sm font-medium text-foreground">支付方式</p>

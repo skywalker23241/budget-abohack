@@ -2,6 +2,13 @@
  * 格式化与日期工具函数。
  */
 
+/** 导出 CSV 时将外部账单文本作为纯文本，避免被表格软件当作公式。 */
+export function csvCell(value: string | number): string {
+  let text = String(value ?? '');
+  if (typeof value === 'string' && /^[\s]*[=+\-@]/.test(text)) text = "'" + text;
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
 /** 生成唯一 ID（不依赖外部库） */
 export function uid(prefix = ''): string {
   const rand = Math.random().toString(36).slice(2, 9);
