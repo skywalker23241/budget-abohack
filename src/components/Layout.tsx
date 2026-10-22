@@ -74,8 +74,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
         }}
         className="app-press mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-muted-foreground hover:bg-accent/80 hover:text-accent-foreground"
       >
-        <IconSettings className="h-5 w-5" />
-        设置
+        <span data-tour-focus className="inline-flex items-center gap-3"><IconSettings className="h-5 w-5" />设置</span>
       </button>
     </nav>
   );
@@ -218,7 +217,7 @@ export function Layout() {
             className="app-press -mt-6 flex flex-col items-center gap-1 text-[11px] font-medium text-foreground"
             aria-label="快速记账"
           >
-            <span className="glass-button flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground ring-4 ring-background">
+            <span data-tour-focus className="glass-button flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground ring-4 ring-background">
               <IconPlus className="h-6 w-6" />
             </span>
             <span>记账</span>

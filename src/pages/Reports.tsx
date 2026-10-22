@@ -177,7 +177,7 @@ export function Reports() {
         <AppSummaryCard
           eyebrow={formatMonthLabel(month)}
           title={r.balance >= 0 ? '本月结余' : '本月缺口'}
-          value={formatCurrency(Math.abs(r.balance), cur)}
+          value={<span data-tour="report-balance" className="inline-block">{formatCurrency(Math.abs(r.balance), cur)}</span>}
           subtitle={
             r.maxCat
               ? `最大支出：${r.maxCat.category} · ${formatPercent(

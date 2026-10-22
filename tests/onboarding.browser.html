@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>使用向导回归检查 · 仅内存</title>
+<div id="root"></div>
+<pre id="result" role="status">运行中</pre>
+<script type="module">
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import { MemoryRouter, useLocation } from 'react-router-dom';
+  import '/src/index.css';
+
+  const data = new Map();
+  Object.defineProperty(window, 'localStorage', { value: {
+    getItem: key => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+    removeItem: key => data.delete(key),
+  } });
+  const { OnboardingGuide, openOnboardingGuide } = await import('/src/components/OnboardingGuide.tsx');
+  const h = React.createElement;
+  const emit = name => window.dispatchEvent(new CustomEvent(name));
+  function Fixture() {
+    const location = useLocation();
+    const [quick, setQuick] = React.useState(false);
+    return h('main', { className: 'space-y-4 p-6' },
+      h('p', { id: 'route' }, location.pathname),
+      ...['quick-add', 'budget-add', 'report-balance', 'goal-add', 'settings-trigger'].map(target =>
+        h('button', { key: target, 'data-tour': target, className: 'mx-1 rounded-xl border p-3',
+          onClick: () => { if (target === 'quick-add') setQuick(true); } }, target)),
+      quick && h('button', { id: 'close-quick', onClick: () => { setQuick(false); emit('budget-app:quick-entry:closed'); } }, '关闭试记'),
+      h(OnboardingGuide));
+  }
+  createRoot(document.querySelector('#root')).render(h(MemoryRouter, { initialEntries: ['/app'] }, h(Fixture)));
+
+  const pause = async () => {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    while (guide()?.dataset.switching === 'true') await new Promise(resolve => setTimeout(resolve, 50));
+  };
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  const guide = () => document.querySelector('[data-onboarding-ui]');
+  const button = text => [...guide().querySelectorAll('button')].find(el => el.textContent.trim() === text);
+  const step = () => Number(guide().querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow'));
+  function checkBounds() {
+    const rect = guide().getBoundingClientRect();
+    assert(rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1, '向导超出视口');
+    assert(guide().scrollWidth <= guide().clientWidth, '向导横向溢出');
+  }
+  try {
+    while (!guide()) await pause();
+    checkBounds();
+    button('开始导览').click();
+    await pause();
+    for (let index = 1; index <= 5; index++) {
+      assert(step() === index, `步骤进度错误：${index}`);
+      checkBounds();
+      if (index === 2) {
+        button('上一步').click();
+        await pause();
+        assert(step() === 1, '上一步未生效');
+        button('下一步').click();
+        await pause();
+      }
+      button(index === 5 ? '完成向导' : '下一步').click();
+      await pause();
+    }
+    assert(!guide() && data.get('budget-app:onboarding-version') === '3', '完成状态未保存');
+    openOnboardingGuide();
+    await pause();
+    button('稍后再看').click();
+    await pause();
+    assert(!guide(), '跳过未关闭向导');
+    openOnboardingGuide();
+    await pause();
+    window.document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await pause();
+    assert(!guide(), 'Esc 未关闭欢迎页');
+    openOnboardingGuide();
+    await pause();
+    button('开始导览').click();
+    await pause();
+    document.querySelector('[data-tour="quick-add"]').click();
+    await pause();
+    assert(!guide(), '试记时应暂停导览');
+    document.querySelector('#close-quick').click();
+    await pause();
+    assert(step() === 2, '关闭试记后应继续预算步骤');
+    guide().querySelector('[aria-label="退出向导"]').click();
+    await pause();
+    assert([...data.keys()].every(key => key === 'budget-app:onboarding-version'), '导览不应写入账本');
+    document.querySelector('#result').textContent = 'PASS：欢迎、五步导览、上一步、完成、跳过、重开、Esc、试记后恢复、仅保存导览状态';
+    document.querySelector('#result').dataset.status = 'passed';
+  } catch (error) {
+    document.querySelector('#result').textContent = `FAIL：${error.message}`;
+    document.querySelector('#result').dataset.status = 'failed';
+    console.error(error);
+  }
+</script>
+</html>
