@@ -123,6 +123,19 @@ export function DatePicker({
     setFocusedDate(next);
   }, [open, value]);
 
+  useEffect(() => {
+    if (!open) return;
+    // 弹窗与浮层的 Radix 版本不同，先处理 Esc，避免连同表单一起关闭。
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    };
+    window.addEventListener('keydown', onEscape, true);
+    return () => window.removeEventListener('keydown', onEscape, true);
+  }, [open]);
+
   const days = useMemo(() => {
     const mondayOffset = (visibleMonth.getDay() + 6) % 7;
     const firstVisibleDay = addDays(visibleMonth, -mondayOffset);
@@ -198,10 +211,11 @@ export function DatePicker({
         container={triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? undefined}
       >
         <Popover.Content
-          align="start"
+          align="end"
           sideOffset={8}
+          collisionBoundary={triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? undefined}
           collisionPadding={8}
-          className="pointer-events-auto z-[70] w-[min(20rem,calc(100vw-1rem))] rounded-2xl border glass-popup p-3 text-popover-foreground outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          className="pointer-events-auto z-[70] w-[min(20rem,calc(100vw-1rem))] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-2xl border glass-popup p-3 text-popover-foreground outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
           <div className="flex items-center justify-between px-1 pb-3">
             <div>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>日历弹层回归检查</title>
+<div id="root"></div>
+<pre id="result" role="status">运行中</pre>
+<script type="module">
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import { Modal } from '/src/components/Modal.tsx';
+  import { DatePicker } from '/src/components/DatePicker.tsx';
+  import '/src/index.css';
+
+  const h = React.createElement;
+  function Fixture() {
+    const [open, setOpen] = React.useState(true);
+    const [date, setDate] = React.useState('2026-10-22');
+    return h(Modal, { open, onClose: () => setOpen(false), title: '日期选择回归', maxWidth: 'max-w-xl' },
+      h('div', { className: 'grid grid-cols-2 gap-3 py-10' },
+        h('div', null, '日期位于表单右侧'),
+        h(DatePicker, { id: 'test-date', value: date, onChange: setDate })));
+  }
+  createRoot(document.querySelector('#root')).render(h(Fixture));
+
+  const pause = () => new Promise(resolve => setTimeout(resolve, 300));
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  const calendar = () => document.querySelector('[role="grid"][aria-label="日历"]');
+  const result = document.querySelector('#result');
+  try {
+    while (!document.querySelector('#test-date')) await pause();
+    const trigger = document.querySelector('#test-date');
+    await pause();
+    trigger.click();
+    await pause();
+    const panel = calendar().parentElement;
+    const outer = panel.parentElement.closest('[role="dialog"]');
+    const bounds = panel.getBoundingClientRect();
+    const parentBounds = outer.getBoundingClientRect();
+    assert(bounds.left >= parentBounds.left && bounds.right <= parentBounds.right, '日历横向被弹窗裁切');
+    assert(bounds.top >= parentBounds.top && bounds.bottom <= parentBounds.bottom, '日历纵向超出弹窗');
+    assert(calendar().querySelectorAll('[role="gridcell"]').length === 42, '日期网格不完整');
+    panel.querySelector('[aria-label="下个月"]').click();
+    await pause();
+    calendar().querySelector('[data-calendar-date="2026-11-15"]').click();
+    await pause();
+    assert(!calendar() && trigger.textContent.includes('11月15日'), '选日期后未更新并收起');
+    trigger.click();
+    await pause();
+    calendar().querySelector('[role="gridcell"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await pause();
+    assert(!calendar() && outer.isConnected, 'Esc 应只收起日历，保留表单');
+    result.textContent = 'PASS：弹窗边界、42 个日期、切换月份、选择日期、Esc 保留表单';
+    result.dataset.status = 'passed';
+    console.log(result.textContent);
+  } catch (error) {
+    result.dataset.status = 'failed';
+    result.textContent = `FAIL：${error.message}`;
+    console.error(error);
+  }
+</script>
+</html>
