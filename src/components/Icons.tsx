@@ -66,6 +66,7 @@ export { Info as IconInfo } from '@phosphor-icons/react/dist/csr/Info';
 export { Bell as IconBell } from '@phosphor-icons/react/dist/csr/Bell';
 export { List as IconMenu } from '@phosphor-icons/react/dist/csr/List';
 export { GithubLogo } from '@phosphor-icons/react/dist/csr/GithubLogo';
+export { TelegramLogo } from '@phosphor-icons/react/dist/csr/TelegramLogo';
 export {
   Check as IconCheck,
   Check,

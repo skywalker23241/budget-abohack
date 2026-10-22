@@ -319,6 +319,32 @@
   font-size: 0.875rem;
 }
 
+.landing-page::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  height: 60rem;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 10% 12%, var(--ambient-mint), transparent 65%),
+    radial-gradient(ellipse at 92% 5%, var(--ambient-blue), transparent 58%);
+}
+
+.landing-header {
+  transition: background-color 180ms ease, backdrop-filter 180ms ease;
+}
+
+.landing-header[data-scrolled='true'] {
+  background: hsl(var(--background) / 0.9);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-header { transition: none; }
+}
+
 .landing-slider {
   display: block;
   width: 100%;

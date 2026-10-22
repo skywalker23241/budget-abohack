@@ -29,16 +29,15 @@ import {
   ChevronRight,
   CircleDollarSign,
   Command as CommandIcon,
-  Gauge,
   GripVertical,
   LockKeyhole,
   ReceiptText,
   Search,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   WalletCards,
   GithubLogo,
+  TelegramLogo,
   IconMenu,
   X,
 } from '@/components/Icons';
@@ -77,24 +76,6 @@ const commandItems = [
   { label: '管理备份与同步', detail: '在设置中连接自己的 WebDAV 服务', to: '/app/settings', icon: ShieldCheck },
   { label: '查看收支报表', detail: '回顾趋势，了解钱花在了哪里', to: '/app/reports', icon: ChartNoAxesCombined },
   { label: '检查贷款计划', detail: '查看待还金额和还款记录', to: '/app/loans', icon: CircleDollarSign },
-];
-
-const featureCards = [
-  {
-    title: '账本留在自己手里',
-    copy: '默认保存在浏览器本地，也可通过 WebDAV 同步到坚果云、NAS、Nextcloud 等自己的服务。',
-    icon: ShieldCheck,
-  },
-  {
-    title: '花多少，心里有数',
-    copy: '把每日可花、分类超支、固定支出和贷款提醒放在同一条工作流里。',
-    icon: Gauge,
-  },
-  {
-    title: '记录多了，也好查',
-    copy: '上百上千条记录仍能快速滚动、搜索和筛选。',
-    icon: ReceiptText,
-  },
 ];
 
 const initialBudgets: BudgetCard[] = [
@@ -145,24 +126,47 @@ const landingLinks = [
   { href: '#overview', label: '收支总览' },
   { href: '#workflow', label: '预算管理' },
   { href: '#performance', label: '更多功能' },
+  { href: '#privacy', label: '隐私说明' },
 ];
 
-const repositoryUrl = 'https://github.com/skywalker23241/personal-budget-app';
+const repositoryUrl = 'https://github.com/skywalker23241/pennypeek-abohack';
+const telegramGroupUrl = 'https://t.me/+nsrOxDXQMeNkODBh';
+
+function TelegramGroupLink({ className, iconOnly = false }: { className?: string; iconOnly?: boolean }) {
+  const label = telegramGroupUrl ? '加入 Telegram 群组' : 'Telegram 群组 · 即将开放';
+  const content = <><TelegramLogo className="h-4 w-4 shrink-0" /><span className={iconOnly ? 'sr-only' : undefined}>{label}</span></>;
+
+  return telegramGroupUrl ? (
+    <a href={telegramGroupUrl} target="_blank" rel="noreferrer" className={className} title={label}>{content}</a>
+  ) : (
+    <span aria-disabled="true" className={cn('cursor-default', className)} title={label}>{content}</span>
+  );
+}
 
 function LandingHeader({ onCommandOpen }: { onCommandOpen: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <header
-      className="glass-panel sticky top-3 z-40 mx-3 mt-3 rounded-[1.4rem] xl:mx-auto xl:max-w-[calc(80rem-3rem)]"
+      className="landing-header sticky top-0 z-40"
+      data-scrolled={scrolled || menuOpen}
       onKeyDown={(event) => { if (event.key === 'Escape') setMenuOpen(false); }}
     >
-      <div className="flex h-16 items-center justify-between gap-3 px-3 sm:px-5">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="PennyPeek 首页">
           <img src="/logo.svg" alt="" className="h-9 w-9 shadow-sm sm:h-10 sm:w-10" />
           <span className="text-sm font-semibold tracking-tight min-[380px]:text-base sm:text-lg">PennyPeek</span>
         </Link>
 
-        <nav aria-label="首页导航" className="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
+        <nav aria-label="首页导航" className="hidden items-center gap-1 text-sm text-muted-foreground lg:flex">
           {landingLinks.map(({ href, label }) => (
             <a key={href} className="rounded-lg px-3 py-2 transition-colors hover:bg-primary/10 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={href}>
               {label}
@@ -171,11 +175,12 @@ function LandingHeader({ onCommandOpen }: { onCommandOpen: () => void }) {
         </nav>
 
         <div className="flex items-center gap-1.5">
-          <Button variant="outline" size="icon" onClick={onCommandOpen} aria-label="打开命令中心" className="hidden sm:inline-flex">
+          <Button variant="ghost" size="icon" onClick={onCommandOpen} aria-label="打开命令中心" className="hidden sm:inline-flex">
             <Search className="h-4 w-4" />
           </Button>
           <ThemeToggle className="hidden min-[380px]:inline-flex" />
-          <Button variant="outline" size="icon" asChild className="hidden lg:inline-flex">
+          <TelegramGroupLink iconOnly className="hidden h-10 w-10 items-center justify-center rounded-lg text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex" />
+          <Button variant="ghost" size="icon" asChild className="hidden xl:inline-flex">
             <a href={repositoryUrl} target="_blank" rel="noreferrer" aria-label="在 GitHub 查看源码">
               <GithubLogo />
             </a>
@@ -183,18 +188,19 @@ function LandingHeader({ onCommandOpen }: { onCommandOpen: () => void }) {
           <Button asChild className="px-3 sm:px-4">
             <Link to="/app">开始记账<ArrowRight className="hidden sm:block" /></Link>
           </Button>
-          <Button variant="ghost" size="icon" className="md:hidden" aria-label={menuOpen ? '收起导航' : '展开导航'} aria-expanded={menuOpen} aria-controls="landing-mobile-nav" onClick={() => setMenuOpen(!menuOpen)}>
+          <Button variant="ghost" size="icon" className="lg:hidden" aria-label={menuOpen ? '收起导航' : '展开导航'} aria-expanded={menuOpen} aria-controls="landing-mobile-nav" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X /> : <IconMenu />}
           </Button>
         </div>
       </div>
       {menuOpen && (
-        <nav id="landing-mobile-nav" aria-label="移动端首页导航" className="grid gap-1 border-t border-border/50 p-3 md:hidden">
+        <nav id="landing-mobile-nav" aria-label="移动端首页导航" className="grid gap-1 px-4 pb-4 lg:hidden">
           {landingLinks.map(({ href, label }) => (
             <a key={href} href={href} onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-3 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               {label}
             </a>
           ))}
+          <TelegramGroupLink className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           <button type="button" onClick={() => { setMenuOpen(false); onCommandOpen(); }} className="flex items-center gap-2 rounded-lg px-3 py-3 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <Search className="h-4 w-4" />搜索记账操作
           </button>
@@ -205,16 +211,16 @@ function LandingHeader({ onCommandOpen }: { onCommandOpen: () => void }) {
 }
 
 function LandingFooter() {
-  const linkClass = 'w-fit rounded-sm text-sm text-white/65 transition-colors hover:text-[#b8ddc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8ddc8]';
+  const linkClass = 'w-fit rounded-sm text-sm text-[#f5eddf]/80 transition-colors hover:text-[#b8ddc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8ddc8]';
   return (
-    <footer className="mt-8 overflow-hidden bg-[#1e3028] text-[#f5eddf]">
-      <div className="mx-auto max-w-7xl px-6 pt-14 sm:px-8 sm:pt-20 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-3 lg:grid-cols-[2fr_1fr_1fr_1.25fr] lg:gap-12">
-          <div className="sm:col-span-3 lg:col-span-1">
+    <footer className="overflow-hidden bg-[#221e1a] text-[#f5eddf]">
+      <div className="mx-auto max-w-7xl px-4 pb-6 pt-16 sm:px-6 sm:pt-20 lg:px-8">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 pb-14 sm:grid-cols-3 lg:grid-cols-[1.7fr_repeat(3,minmax(0,0.65fr))] lg:gap-12 lg:pb-20">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <Link to="/" className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8ddc8]">
-              <img src="/logo.svg" alt="" className="h-12 w-12" />
+              <img src="/logo.svg" alt="" className="h-10 w-10" />
               <div>
-                <p className="text-xl font-semibold tracking-tight">PennyPeek</p>
+                <p className="font-[Georgia,serif] text-xl font-semibold tracking-tight">PennyPeek</p>
                 <p className="mt-1 text-xs text-white/50">把每一笔，安排明白。</p>
               </div>
             </Link>
@@ -234,34 +240,27 @@ function LandingFooter() {
             <Link to="/app/goals" className={linkClass}>储蓄目标</Link>
             <a href={`${repositoryUrl}/issues`} target="_blank" rel="noreferrer" className={linkClass}>反馈问题 ↗</a>
           </nav>
-          <nav aria-label="Abo 的其他站点" className="flex flex-col gap-3">
-            <h2 className="mb-2 text-xs font-medium text-white/60">和生活有关</h2>
+          <nav aria-label="Abo 的其他站点" className="col-span-2 flex flex-col gap-3 sm:col-span-1">
+            <h2 className="mb-2 text-xs font-medium text-white/60">关于</h2>
+            <TelegramGroupLink className={cn(linkClass, 'inline-flex items-center gap-2 leading-6')} />
             <a href="https://restcal.abohack.com/" target="_blank" rel="noreferrer" className={linkClass}>休历 · 安排休息 ↗</a>
             <a href="https://blog.abohack.com/blog/" target="_blank" rel="noreferrer" className={linkClass}>博客 · 记录生活 ↗</a>
             <a href="https://abohack.com/" target="_blank" rel="noreferrer" className={linkClass}>Abo 的主页 ↗</a>
           </nav>
         </div>
-        <div aria-hidden="true" className="select-none pb-8 pt-12 text-[clamp(3rem,12vw,10rem)] font-semibold leading-none tracking-[-0.06em] text-white/[0.06] sm:pt-20">PennyPeek</div>
         <div className="flex flex-col gap-3 border-t border-white/10 py-6 text-xs leading-6 text-white/45 sm:flex-row sm:items-center sm:justify-between">
           <p>PennyPeek © {new Date().getFullYear()} Abo Le</p>
-          <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 shrink-0" />默认本地存储，可选 WebDAV 备份与同步。</p>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1"><span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 shrink-0" />本地存储 · 自选 WebDAV</span><a href="#privacy" className="rounded-sm text-white/70 underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8ddc8]">隐私与 Cookie 说明</a></p>
         </div>
+        <div aria-hidden="true" className="select-none pt-5 font-[Georgia,serif] text-[clamp(3.3rem,12.5vw,10rem)] font-semibold leading-[0.85] tracking-[-0.055em] text-[#f5eddf]/[0.09] sm:pt-8">PennyPeek</div>
       </div>
     </footer>
   );
 }
 
-function HeroBackdrop() {
-  return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,var(--ambient-mint),transparent_65%)]" />
-    </div>
-  );
-}
-
 function DashboardPreview() {
   return (
-    <div className="glass-card overflow-hidden p-5 sm:p-6">
+    <div className="glass-card overflow-hidden p-5 shadow-[0_24px_80px_-32px_hsl(var(--primary)/0.3)] sm:p-7">
       <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-4">
         <div className="flex items-center gap-2"><img src="/logo.svg" alt="" className="h-7 w-7" /><span className="text-sm font-semibold">财务总览</span></div>
         <span className="rounded-full bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground">示例账本</span>
@@ -301,23 +300,17 @@ function DashboardPreview() {
   );
 }
 
-function HeroSection({ onCommandOpen }: { onCommandOpen: () => void }) {
+function HeroSection() {
   return (
-    <section className="relative isolate overflow-hidden border-b">
-      <HeroBackdrop />
-
-      <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-4 pb-14 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,32rem)] lg:gap-14 lg:px-8 lg:pb-24 lg:pt-20">
+    <section className="relative">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-10 sm:px-6 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-20 lg:px-8 lg:pb-24 lg:pt-20">
         <div>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border bg-background/85 px-3 py-1 text-sm text-muted-foreground shadow-sm backdrop-blur">
-            <Sparkles className="h-4 w-4 text-warning" />
-            预算、账单、贷款和目标放进同一个节奏里
-          </div>
-          <h1 className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl lg:text-6xl">
-            PennyPeek
+          <p className="mb-5 text-sm font-medium text-accent-foreground">PennyPeek · 你的日常预算账本</p>
+          <h1 className="text-[2.5rem] font-semibold leading-[1.2] tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem]">
+            把钱花明白，<br />才能存住钱。
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-            每天打开一次，就知道今天还能花多少、哪些分类正在超支、贷款什么时候还、
-            储蓄目标离你还有多远。
+            不止记账，更是算好每一笔，每一个Penny都值得Peek！
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
@@ -326,29 +319,30 @@ function HeroSection({ onCommandOpen }: { onCommandOpen: () => void }) {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg" onClick={onCommandOpen}>
-              <CommandIcon className="h-4 w-4" />
-              打开命令中心
+            <Button variant="ghost" size="lg" asChild>
+              <a href="#overview">先看看怎么用<ChevronRight className="h-4 w-4" /></a>
             </Button>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-3">
-            <div className="rounded-lg border bg-background/85 p-3 shadow-sm backdrop-blur sm:p-4">
+          <a href="#privacy" className="mt-5 inline-flex items-center gap-2 rounded-sm text-xs leading-6 text-muted-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><ShieldCheck className="h-4 w-4 shrink-0" />账本保存在浏览器本地，备份由你掌管</a>
+
+          <div className="mt-10 grid max-w-md grid-cols-3 gap-4 sm:mt-12">
+            <div>
               <p className="text-[11px] text-muted-foreground sm:text-xs">示例月结余</p>
               <AnimatedCurrency value={6820} className="mt-1 block text-xl font-semibold sm:text-2xl" />
             </div>
-            <div className="rounded-lg border bg-background/85 p-3 shadow-sm backdrop-blur sm:p-4">
-              <p className="text-[11px] text-muted-foreground sm:text-xs">储蓄率</p>
+            <div className="border-l border-border/60 pl-4">
+              <p className="text-[11px] text-muted-foreground sm:text-xs">示例储蓄率</p>
               <AnimatedPercent value={33} className="mt-1 block text-xl font-semibold sm:text-2xl" />
             </div>
-            <div className="rounded-lg border bg-background/85 p-3 shadow-sm backdrop-blur sm:p-4">
-              <p className="text-[11px] text-muted-foreground sm:text-xs">到期提醒</p>
+            <div className="border-l border-border/60 pl-4">
+              <p className="text-[11px] text-muted-foreground sm:text-xs">示例到期提醒</p>
               <NumberFlow value={3} className="mt-1 block text-xl font-semibold sm:text-2xl" willChange />
             </div>
           </div>
         </div>
 
-        <div className="hidden lg:block">
+        <div className="mx-auto w-full max-w-xl lg:max-w-none">
           <DashboardPreview />
         </div>
       </div>
@@ -366,7 +360,7 @@ function OverviewSection() {
     { label: '10月', income: 20500, expense: 13680 },
   ];
   return (
-    <section id="overview" className="border-b bg-muted/15 py-16 sm:py-20">
+    <section id="overview" className="py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 max-w-2xl">
           <h2 className="text-3xl font-semibold sm:text-4xl">收支的变化，一眼看清。</h2>
@@ -605,7 +599,7 @@ function BudgetPriorityList() {
 
 function WorkflowSection() {
   return (
-    <section id="workflow" className="border-b py-16 sm:py-20">
+    <section id="workflow" className="py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 max-w-2xl">
           <h2 className="mt-2 text-3xl font-semibold text-foreground sm:text-4xl">
@@ -699,7 +693,7 @@ function LedgerVirtualList() {
 
 function PerformanceSection({ onCommandOpen }: { onCommandOpen: () => void }) {
   return (
-    <section id="performance" className="border-b bg-muted/15 py-16 sm:py-20">
+    <section id="performance" className="py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 max-w-2xl">
           <h2 className="text-3xl font-semibold sm:text-4xl">日常记录，随手就好。</h2>
@@ -731,13 +725,42 @@ function PerformanceSection({ onCommandOpen }: { onCommandOpen: () => void }) {
           </div>
           <LedgerVirtualList />
         </div>
-        <div className="mt-5 grid gap-5 md:grid-cols-3">
-          {featureCards.map(({ title, copy, icon: Icon }) => (
-            <div key={title} className="flex items-start gap-3 px-1 py-5">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-card/40 text-accent-foreground"><Icon className="h-5 w-5" /></span>
-              <div><h3 className="text-sm font-semibold">{title}</h3><p className="mt-2 text-sm leading-7 text-muted-foreground">{copy}</p></div>
+      </div>
+    </section>
+  );
+}
+
+function PrivacySection() {
+  return (
+    <section id="privacy" aria-labelledby="privacy-heading" className="py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+          <div>
+            <ShieldCheck className="mb-5 h-8 w-8 text-accent-foreground" />
+            <h2 id="privacy-heading" className="text-3xl font-semibold leading-tight sm:text-4xl">你的账本，<br />由你自己保管。</h2>
+            <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground sm:text-base">收支、预算、贷款和储蓄目标默认保存在当前设备的浏览器中。你可以导出本地备份，也可以选择自己的 WebDAV 服务保存副本。</p>
+            <Button asChild variant="ghost" className="mt-5 px-0 hover:bg-transparent">
+              <Link to="/app/settings">管理数据与备份<ChevronRight /></Link>
+            </Button>
+          </div>
+          <div className="divide-y divide-border/50">
+            <div className="pb-5">
+              <h3 className="text-sm font-semibold">浏览器存储与本地备份</h3>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">账本、外观偏好和 WebDAV 配置保存在当前浏览器的本地存储（localStorage）中。导出的 JSON 备份保存到你选择的位置；更换浏览器、清除网站数据或结束无痕会话可能使本地记录丢失，请定期备份。</p>
             </div>
-          ))}
+            <div className="py-5">
+              <h3 className="text-sm font-semibold">WebDAV 由你选择</h3>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">配置服务后，应用会在你测试连接或执行同步时连接指定的 WebDAV，例如坚果云、NAS 或 Nextcloud。备份文件存放在该服务中；连接时，账号、密码及同步传输的数据会经过本站代理转发，代理代码不持久保存这些内容。建议使用 HTTPS 和专用应用密码。</p>
+            </div>
+            <div className="py-5">
+              <h3 className="text-sm font-semibold">Cookie 与访问统计</h3>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">应用使用浏览器本地存储保存账本和偏好，不使用 Cookie 保存账本，也未集成广告 Cookie、行为追踪或第三方统计脚本。站点托管与安全服务可能使用必要的 Cookie 或保留访问日志，这与账本存储是不同的用途。</p>
+            </div>
+            <div className="pt-5">
+              <h3 className="text-sm font-semibold">你可以管理与删除数据</h3>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">在设置中可以导出备份、清空账本或清除 WebDAV 配置。清除浏览器数据不会删除已经导出的备份或 WebDAV 文件，这些副本需要你在对应位置自行管理。跳转到 GitHub、Telegram 等外部网站后，适用对方的隐私规则。</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -837,13 +860,16 @@ export function Landing() {
   }, []);
 
   return (
-    <div className="min-h-dvh text-foreground">
+    <div className="landing-page relative isolate min-h-dvh bg-background text-foreground">
       <LandingHeader onCommandOpen={() => setCommandOpen(true)} />
-      <HeroSection onCommandOpen={() => setCommandOpen(true)} />
-      <OverviewSection />
-      <WorkflowSection />
-      <PerformanceSection onCommandOpen={() => setCommandOpen(true)} />
-      <ClosingCta />
+      <main>
+        <HeroSection />
+        <OverviewSection />
+        <WorkflowSection />
+        <PerformanceSection onCommandOpen={() => setCommandOpen(true)} />
+        <PrivacySection />
+        <ClosingCta />
+      </main>
       <LandingFooter />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
     </div>
