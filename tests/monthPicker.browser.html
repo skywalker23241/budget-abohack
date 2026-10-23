@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>月份选择回归检查</title>
+<div id="root"></div>
+<pre id="result" role="status">运行中</pre>
+<script type="module">
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import { MonthPicker } from '/src/components/MonthPicker.tsx';
+  import { currentMonth, formatMonthLabel } from '/src/lib/format.ts';
+  import '/src/index.css';
+
+  const h = React.createElement;
+  const current = currentMonth();
+  const lastYear = Number(current.slice(0, 4)) - 1;
+  const prior = `${lastYear}-01`;
+  function Fixture() {
+    const [month, setMonth] = React.useState(current);
+    return h('div', { className: 'p-4' },
+      h(MonthPicker, { month, onChange: setMonth }),
+      h('output', { id: 'month' }, month));
+  }
+  createRoot(document.querySelector('#root')).render(h(Fixture));
+
+  const pause = () => new Promise(resolve => setTimeout(resolve, 300));
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  const dialog = () => document.querySelector('[role="dialog"]');
+  const button = label => document.querySelector(`button[aria-label="${label}"]`);
+  const result = document.querySelector('#result');
+  try {
+    for (let attempt = 0; attempt < 30 && !document.querySelector('#month'); attempt++) await pause();
+    const trigger = document.querySelector('button[aria-haspopup="dialog"]');
+    assert(trigger && !trigger.textContent.trim(), '入口应只显示日历图标');
+    trigger.click();
+    await pause();
+    assert(dialog(), '未打开月份弹窗');
+    assert(dialog().querySelectorAll('[aria-pressed]').length === 12, '应显示 12 个月');
+    assert(button(formatMonthLabel(current)).getAttribute('aria-pressed') === 'true', '当前选择未高亮');
+    assert(button('下一年').disabled, '不应进入未来年份');
+    for (let index = Number(current.slice(5)); index < 12; index++) {
+      assert(button(formatMonthLabel(`${current.slice(0, 4)}-${String(index + 1).padStart(2, '0')}`)).disabled, '未来月份应禁用');
+    }
+    button('上一年').click();
+    await pause();
+    button(formatMonthLabel(prior)).click();
+    await pause();
+    assert(!dialog() && document.querySelector('#month').value === prior, '跨年选择后应更新并关闭');
+    trigger.click();
+    await pause();
+    assert(button(formatMonthLabel(prior)).getAttribute('aria-pressed') === 'true', '重新打开应保留选择');
+    [...dialog().querySelectorAll('button')].find(item => item.textContent === '本月').click();
+    await pause();
+    assert(!dialog() && document.querySelector('#month').value === current, '返回本月失败');
+    trigger.click();
+    await pause();
+    dialog().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await pause();
+    assert(!dialog() && document.querySelector('#month').value === current, '取消不应改变选择');
+    assert(document.activeElement === trigger, '关闭后焦点应返回日历图标');
+    result.dataset.status = 'passed';
+    result.textContent = 'PASS：图标入口、月份高亮、未来限制、跨年选择、返回本月、取消与焦点恢复';
+  } catch (error) {
+    result.dataset.status = 'failed';
+    result.textContent = `FAIL：${error.message}`;
+    console.error(error);
+  }
+</script>
+</html>

@@ -65,10 +65,7 @@ export function BudgetForm({ initial, month, existingCategories, onClose }: Prop
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <p className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-accent-foreground">
-        {formatMonthLabel(month)}
-      </p>
-      <AmountField label="预算金额" value={amount} onChange={setAmount} error={errors.amount} autoFocus />
+      <AmountField label={`${formatMonthLabel(month)}预算金额`} value={amount} onChange={setAmount} error={errors.amount} autoFocus />
       <Field label="支出分类" required error={!isCustom ? errors.category : undefined}>
         <IconChoices
           label="支出分类"

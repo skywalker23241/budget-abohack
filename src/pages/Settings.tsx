@@ -486,14 +486,8 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
         <>
           <PageHeader title="设置" />
           <AppSummaryCard
-            eyebrow="设置中心"
             title={syncConfigured ? '云同步配置' : '本地数据'}
             value={syncConfigured ? syncResultLabel(syncMeta.lastResult) : `${totalLocalItems} 项`}
-            subtitle={
-              syncConfigured
-                ? `最近同步：${formatSyncTime(syncMeta.lastSyncAt)}`
-                : '保存在当前浏览器'
-            }
             accent={syncConfigured ? 'info' : 'warning'}
             meta={[
               { label: '记账记录', value: `${transactions.length} 笔` },
@@ -566,10 +560,6 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 );
               })}
             </nav>
-            <div className="mt-auto hidden items-start gap-2.5 px-3 pb-2 pt-8 text-muted-foreground md:flex">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-              <p className="text-xs">本地存储</p>
-            </div>
           </aside>
         )}
 
@@ -599,7 +589,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 <ThemeSegmented />
               </SettingFieldRow>
 
-              <SettingFieldRow id="settings-currency" title="默认币种" description="仅显示，不换算">
+              <SettingFieldRow id="settings-currency" title="显示币种（不换算）">
                 <SelectField
                   id="settings-currency"
                   value={settings.currency}
@@ -671,8 +661,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
               <SettingFieldRow
                 id="settings-month-start"
                 unit="日"
-                title="记账周期起始日"
-                description="每月 1–28 日"
+                title="记账周期起始日（1–28）"
               >
                 <Input
                   id="settings-month-start"
@@ -791,7 +780,7 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
                 </Field>
               </div>
 
-              <Field id="webdav-path" label="云端文件路径" hint="多设备使用相同路径">
+              <Field id="webdav-path" label="云端文件路径">
                 <Input
                   id="webdav-path"
                   value={syncConfig.remotePath}
@@ -925,16 +914,6 @@ export function Settings({ embedded = false }: { embedded?: boolean } = {}) {
             </Card>
           </MobileCollapsibleSection>
 
-          <Card
-            className={cn(
-              'settings-note border-0 bg-transparent p-1 shadow-none',
-              embedded && activeSection !== 'other' && 'hidden',
-            )}
-          >
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              数据保存在当前浏览器，请定期备份。
-            </p>
-          </Card>
         </div>
       </div>
     </>

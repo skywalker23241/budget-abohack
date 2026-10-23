@@ -28,20 +28,15 @@ export function Card({
 // ---------------- SectionTitle ----------------
 export function SectionTitle({
   title,
-  subtitle,
   action,
 }: {
   title: string;
-  subtitle?: string;
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+    <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
       <div className="min-w-0">
         <h2 className="break-words text-base font-semibold text-foreground">{title}</h2>
-        {subtitle && (
-          <p className="mt-0.5 break-words text-sm text-muted-foreground">{subtitle}</p>
-        )}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -163,27 +158,20 @@ export function Badge({
 export function EmptyState({
   icon,
   title,
-  description,
   action,
 }: {
   icon?: ReactNode;
   title: string;
-  description?: string;
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-9 text-center">
       {icon && (
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
           {icon}
         </div>
       )}
       <p className="text-sm font-medium text-foreground">{title}</p>
-      {description && (
-        <p className="mt-1 max-w-sm break-words text-sm text-muted-foreground">
-          {description}
-        </p>
-      )}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

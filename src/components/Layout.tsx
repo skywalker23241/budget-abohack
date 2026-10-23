@@ -42,9 +42,6 @@ const MOBILE_NAV_ITEMS: { to: string; label: string; icon: (p: any) => ReactNode
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-1 px-3">
-      <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
-        财务工作区
-      </p>
       {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
@@ -93,7 +90,6 @@ function Brand() {
       </span>
       <div className="min-w-0 leading-tight">
         <p className="truncate text-sm font-semibold tracking-tight text-foreground">PennyPeek</p>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">个人预算记账助手</p>
       </div>
     </div>
   );
@@ -113,19 +109,16 @@ export function Layout() {
       <aside className="glass-panel fixed bottom-5 left-5 top-5 z-30 hidden w-[13.75rem] flex-col rounded-3xl lg:flex">
         <Brand />
         <NavItems />
-        <div className="mt-auto border-t border-border/70 px-3 py-3">
+        <div className="mt-auto flex items-center gap-1 border-t border-border/50 p-3">
           <button
             type="button"
             onClick={openOnboardingGuide}
-            className="app-press flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            className="app-press flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <IconHelp className="h-4 w-4" />
             使用向导
           </button>
-          <div className="mt-1 flex items-center justify-between rounded-xl bg-muted/55 px-3 py-2">
-            <span className="text-[10px] leading-4 text-muted-foreground">本地加密存储</span>
-            <ThemeToggle />
-          </div>
+          <ThemeToggle className="h-11 w-11 shrink-0 rounded-xl text-muted-foreground" />
         </div>
       </aside>
 

@@ -2,7 +2,7 @@
  * 提醒卡片列表：用于仪表盘和报表页展示智能提醒。
  */
 import type { Reminder, ReminderLevel } from '@/types';
-import { IconAlert, IconInfo, IconBell, IconCheckCircle } from './Icons';
+import { IconAlert, IconInfo, IconBell } from './Icons';
 
 const LEVEL_STYLE: Record<
   ReminderLevel,
@@ -24,7 +24,7 @@ const LEVEL_STYLE: Record<
 
 export function ReminderList({
   reminders,
-  emptyText = '暂无提醒，一切正常 👍',
+  emptyText = '暂无提醒',
   max,
 }: {
   reminders: Reminder[];
@@ -35,8 +35,7 @@ export function ReminderList({
 
   if (list.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-6 text-sm text-success">
-        <IconCheckCircle className="h-5 w-5 text-success" />
+      <div className="py-4 text-sm text-muted-foreground">
         {emptyText}
       </div>
     );

@@ -40,10 +40,8 @@ import { MobileCollapsibleSection } from '@/components/MobileCollapsibleSection'
 import { MonthPicker } from '@/components/MonthPicker';
 import {
   Card,
-  StatCard,
   SectionTitle,
   ProgressBar,
-  Badge,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -53,7 +51,7 @@ import { ReminderList } from '@/components/ReminderList';
 import { AmountText } from '@/components/AmountText';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { cn } from '@/lib/utils';
-import { IconChart, IconArrowUp, IconTrendingUp } from '@/components/Icons';
+import { IconChart, IconTrendingUp } from '@/components/Icons';
 
 type Granularity = 'day' | 'week' | 'month';
 
@@ -174,21 +172,13 @@ export function Reports() {
     <>
       <PageHeader
         title="报表分析"
-        actions={<MonthPicker month={month} onChange={setMonth} compact />}
+        actions={<MonthPicker month={month} onChange={setMonth} />}
       />
 
       <div data-tour="report-summary">
         <AppSummaryCard
-          eyebrow={formatMonthLabel(month)}
           title={r.balance >= 0 ? '收支结余' : '收支缺口'}
           value={<span data-tour="report-balance" className="inline-block max-w-full whitespace-nowrap [font-size:min(2.25rem,7vw)]" style={{fontSize:`min(2.25rem, ${150/formatCurrency(Math.abs(r.balance),cur).length}cqw)`}}>{formatCurrency(Math.abs(r.balance), cur)}</span>}
-          subtitle={
-            r.maxCat
-              ? `最大支出：${r.maxCat.category} · ${formatPercent(
-                  r.catTotal > 0 ? r.maxCat.amount / r.catTotal : 0,
-                )}`
-              : undefined
-          }
           accent={
             r.balance < 0
               ? 'danger'
@@ -212,32 +202,6 @@ export function Reports() {
         className="mt-4 hidden md:block"
         title="收支明细"
       >
-        {/* 1. 月度收支汇总 */}
-        <SectionTitle title={`${formatMonthLabel(month)} 收支汇总`} />
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-          <StatCard label="总收入" value={formatCurrency(r.income, cur)} tone="income" />
-          <StatCard label="总支出" value={formatCurrency(r.expense, cur)} tone="expense" />
-          <StatCard
-            label="结余"
-            value={formatCurrency(r.balance, cur)}
-            tone={r.balance >= 0 ? 'brand' : 'expense'}
-          />
-          <StatCard
-            label="储蓄率"
-            value={formatPercent(r.rate)}
-            tone={r.rate >= settings.savingsRateTarget / 100 ? 'income' : 'warning'}
-          />
-          <StatCard
-            label="固定支出占比"
-            value={formatPercent(r.fixedRatio)}
-            hint={formatCurrency(r.fixed, cur)}
-          />
-          <StatCard
-            label="可变支出占比"
-            value={formatPercent(r.variableRatio)}
-            hint={formatCurrency(r.variable, cur)}
-          />
-        </div>
 
         {/* 固定 vs 可变 进度 */}
         {r.fixed + r.variable > 0 && (
@@ -272,10 +236,10 @@ export function Reports() {
         className={cn('mt-4',mobileTab!=='category'&&'hidden md:block')}
         title="分类分析"
         alwaysOpen
-        subtitle={r.maxCat ? `最大支出：${r.maxCat.category}` : undefined}
       >
         <Card className="md:hidden">
-          <SectionTitle title="支出分类" subtitle={r.byCat.length?`${r.byCat.length} 个分类，按支出排序`:'所选月份暂无支出'} />
+          <SectionTitle title="支出分类" />
+          {r.byCat.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">本月暂无支出</p>}
           <div className="space-y-4">{r.byCat.map(item=><div key={item.category} className="flex min-w-0 items-center gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted"><CategoryIcon category={item.category} type="expense"/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.category}</p><p className="mt-1 text-xs text-muted-foreground">{formatPercent(r.catTotal>0?item.amount/r.catTotal:0)}</p></div><AmountText className="w-[44%] shrink-0 text-right" value={formatCurrency(item.amount,cur)} maxSize={16}/></div>)}</div>
           {r.catTotal>0 && <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/50 pt-3 text-xs"><div className="min-w-0"><p className="mb-1 text-muted-foreground">固定支出 · {formatPercent(r.fixedRatio)}</p><AmountText value={formatCurrency(r.fixed,cur)} maxSize={16}/></div><div className="min-w-0"><p className="mb-1 text-muted-foreground">可变支出 · {formatPercent(r.variableRatio)}</p><AmountText value={formatCurrency(r.variable,cur)} maxSize={16}/></div></div>}
         </Card>
@@ -439,24 +403,13 @@ export function Reports() {
         className={cn('mt-4',mobileTab!=='alerts'&&'hidden md:block')}
         title="异常消费提醒"
         alwaysOpen
-        subtitle={r.large.length > 0 ? `${r.large.length} 笔大额消费` : '本月消费平稳'}
         defaultOpen={r.large.length > 0 || r.reminders.length > 0}
       >
         <Card>
-          <SectionTitle
-            title="异常消费提醒"
-            action={
-              r.large.length > 0 ? (
-                <Badge tone="rose">
-                  <IconArrowUp className="h-3 w-3" />
-                  {r.large.length} 笔大额
-                </Badge>
-              ) : undefined
-            }
-          />
+          <SectionTitle title="异常消费提醒" />
           <ReminderList
             reminders={r.reminders}
-            emptyText="本月消费平稳，未发现异常"
+            emptyText="暂无异常消费"
           />
         </Card>
       </MobileCollapsibleSection>

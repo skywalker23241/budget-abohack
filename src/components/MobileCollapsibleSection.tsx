@@ -18,7 +18,6 @@ function useIsMobile() {
 
 export function MobileCollapsibleSection({
   title,
-  subtitle,
   children,
   defaultOpen = false,
   alwaysOpen = false,
@@ -26,7 +25,6 @@ export function MobileCollapsibleSection({
   contentClassName,
 }: {
   title: string;
-  subtitle?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
   alwaysOpen?: boolean;
@@ -51,11 +49,6 @@ export function MobileCollapsibleSection({
       >
         <span className="min-w-0 flex-1">
           <span className="block break-words text-sm font-semibold text-foreground">{title}</span>
-          {subtitle && (
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {subtitle}
-            </span>
-          )}
         </span>
         <ChevronDown
           className={cn(
@@ -94,14 +87,12 @@ export function MobileCollapsibleSection({
 
 export function InlineDisclosure({
   title,
-  subtitle,
   children,
   defaultOpen = false,
   open: controlledOpen,
   onOpenChange,
 }: {
   title: string;
-  subtitle?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
   open?: boolean;
@@ -123,11 +114,6 @@ export function InlineDisclosure({
       >
         <span className="min-w-0 flex-1">
           <span className="block break-words text-sm font-medium text-muted-foreground group-hover:text-foreground">{title}</span>
-          {subtitle && (
-            <span className="mt-1 block break-words text-xs text-muted-foreground/80">
-              {subtitle}
-            </span>
-          )}
         </span>
         <ChevronDown
           className={cn(

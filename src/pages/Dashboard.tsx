@@ -30,9 +30,8 @@ import {
   formatMonthLabel,
   toDateStr,
 } from '@/lib/format';
-import { TRANSACTION_TYPE_LABELS } from '@/lib/constants';
 import { MonthPicker } from '@/components/MonthPicker';
-import { Card, SectionTitle, Badge, Button, ProgressBar } from '@/components/ui';
+import { Card, SectionTitle, Button, ProgressBar } from '@/components/ui';
 import { CategoryDonut, IncomeExpenseTrend } from '@/components/charts';
 import { ReminderList } from '@/components/ReminderList';
 import { QuickTransactionModal } from '@/components/QuickTransactionModal';
@@ -73,21 +72,10 @@ function ScoreRing({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-foreground">{score}</span>
-        <span className="text-xs text-muted-foreground">满分 100</span>
+        <span className="text-3xl font-bold text-foreground" aria-label={`${score} 分，满分 100`}>{score}</span>
       </div>
     </div>
   );
-}
-
-function daysRemainingInMonth(month: string): number {
-  const [year, monthIndex] = month.split('-').map(Number);
-  const today = new Date();
-  const isCurrent =
-    today.getFullYear() === year && today.getMonth() + 1 === monthIndex;
-  const totalDays = new Date(year, monthIndex, 0).getDate();
-  if (!isCurrent) return totalDays;
-  return Math.max(1, totalDays - today.getDate() + 1);
 }
 
 function MetricRing({
@@ -216,8 +204,6 @@ export function Dashboard() {
       .filter((b) => b.status !== 'normal')
       .sort((a, b) => b.usageRate - a.usageRate)
       .slice(0, 3);
-    const dailyAvailable =
-      bSummary.total > 0 ? Math.max(0, bSummary.remaining) / daysRemainingInMonth(month) : 0;
     const loanRemaining = totalRemainingPrincipal(loans);
     const monthRepayment = transactionsInMonth(transactions, month)
       .filter((t) => t.type === 'loan_repayment')
@@ -283,7 +269,6 @@ export function Dashboard() {
       rate,
       bSummary,
       budgetWatch,
-      dailyAvailable,
       loanRemaining,
       monthRepayment,
       goalTarget,
@@ -309,25 +294,13 @@ export function Dashboard() {
         ? 'warning'
         : 'success';
   const savingsOnTrack = data.rate >= settings.savingsRateTarget / 100;
-  const statusSummary =
-    data.bSummary.total <= 0
-      ? '预算未设置'
-      : data.bSummary.remaining < 0
-        ? '本月预算已超支'
-        : data.budgetWatch.length > 0
-          ? data.budgetWatch[0].status === 'exceeded'
-            ? `${data.budgetWatch[0].category} 已超支`
-            : `${data.budgetWatch[0].category} 接近上限`
-          : savingsOnTrack
-            ? '储蓄目标达成'
-            : '储蓄率未达目标';
 
   return (
     <div className="flex min-w-0 flex-col">
       <header className="order-1 mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3 md:mb-7">
         <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-3xl">财务总览</h1>
         <div className="flex min-w-0 items-center gap-2">
-            <MonthPicker month={month} onChange={setMonth} className="gap-0 p-0 [&>span]:min-w-0 [&>span]:px-0 [&>span]:text-xs [&>span>svg]:hidden [&>button]:h-11 [&>button]:w-9 md:gap-1 md:p-1 md:[&>span]:min-w-[6rem] md:[&>span]:text-sm md:[&>span>svg]:block md:[&>button]:h-8 md:[&>button]:w-8" />
+            <MonthPicker month={month} onChange={setMonth} />
             <Button
               data-tour="quick-add"
               className="hidden shadow-sm md:inline-flex"
@@ -350,58 +323,23 @@ export function Dashboard() {
           }}
         />
 
-        <div className="mb-2 flex min-w-0 items-center justify-between gap-3 lg:mb-8">
+        <div className="mb-1 flex min-w-0 items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,.12)]" />
-            <span className="hidden lg:inline">{formatMonthLabel(month)}</span>
-            <span className="lg:hidden">{data.bSummary.total > 0 ? data.bSummary.remaining < 0 ? '预算已超支' : '预算还剩' : '收支结余'}</span>
+            <span>{data.bSummary.total > 0 ? data.bSummary.remaining < 0 ? '预算已超支' : '预算剩余' : '收支结余'}</span>
           </div>
-          <Link
-            to="/app/budget"
-            data-dashboard-budget-action
-            title={data.bSummary.total > 0 ? statusSummary : '设置分类预算'}
-            className={cn(
-              'inline-flex min-h-8 min-w-0 max-w-[65%] items-center rounded-full border px-2.5 py-1 text-[11px] font-medium lg:text-xs',
-              data.bSummary.total <= 0 ? 'border-border/60 bg-muted/50 text-muted-foreground' : data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
-                ? 'border-rose-400/25 bg-rose-400/10 text-destructive'
-                : savingsOnTrack
-                  ? 'border-emerald-400/25 bg-emerald-400/10 text-success'
-                  : 'border-amber-400/25 bg-amber-400/10 text-warning',
-            )}
-          >
-            <span className="truncate lg:hidden">{data.bSummary.total <= 0 ? '去设预算' : data.bSummary.remaining < 0 ? '查看超支' : data.budgetWatch.length > 0 ? statusSummary : '预算内'}</span>
-            <span className="hidden lg:inline">{data.bSummary.total <= 0 ? '未设预算' : data.bSummary.remaining < 0 || data.budgetWatch.some((item) => item.status === 'exceeded')
-              ? '需要关注'
-              : savingsOnTrack
-                ? '财务状态良好'
-                : '保持节奏'}</span>
-            <IconChevronRight className="ml-1 h-3 w-3 shrink-0 lg:hidden" />
-          </Link>
+          <Link to="/app/budget" data-dashboard-budget-action className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-accent-foreground">{data.bSummary.total > 0 ? '管理预算' : '设置预算'}<IconChevronRight className="h-3 w-3" /></Link>
         </div>
 
         <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)] xl:items-end">
           <div className="min-w-0 [container-type:inline-size]">
-            <p className="hidden text-sm font-medium text-muted-foreground lg:block">
-              {data.bSummary.total > 0 ? data.bSummary.remaining < 0 ? '预算已超支' : '预算还剩' : '收支结余'}
-            </p>
             <p data-dashboard-money data-dashboard-primary title={primaryText} style={{ fontSize: `min(var(--dashboard-primary-size), ${150 / primaryText.length}cqw)` }} className={cn('mt-2 whitespace-nowrap text-[2.65rem] font-semibold leading-tight tracking-[-0.045em]', data.bSummary.total > 0 && data.bSummary.remaining < 0 || data.bSummary.total <= 0 && data.balance < 0 ? 'text-destructive' : 'text-foreground')}>
               {primaryText}
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="hidden text-sm text-muted-foreground lg:inline">{statusSummary}</span>
-              {data.bSummary.total > 0 && data.bSummary.remaining > 0 && isCurrentMonth && (
-                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-muted-foreground">
-                  剩余 {daysRemainingInMonth(month)} 天 · 日均参考 {formatCurrency(data.dailyAvailable, cur)}
-                </span>
-              )}
-            </div>
 
-            <div className="mt-4 lg:hidden">
-              {data.bSummary.total > 0 ? <>
-                <div className="mb-2 flex items-center justify-between gap-2 text-xs text-muted-foreground"><span>预算已用 {formatPercent(data.bSummary.usageRate)}</span><Link to="/app/budget" className="inline-flex min-h-8 items-center gap-1 text-accent-foreground">管理预算<IconChevronRight className="h-3 w-3" /></Link></div>
+            {data.bSummary.total > 0 && <div className="mt-4 lg:hidden">
+                <div className="mb-2 text-xs text-muted-foreground">预算已用 {formatPercent(data.bSummary.usageRate)}</div>
                 <ProgressBar value={data.bSummary.usageRate} tone={budgetTone === 'danger' ? 'rose' : budgetTone === 'warning' ? 'amber' : 'brand'} className="h-1.5" />
-              </> : <Link to="/app/budget" className="flex min-h-11 items-center justify-between gap-2 rounded-xl bg-primary/10 px-3 text-xs text-accent-foreground"><span>设置分类预算，知道每月还能花多少</span><IconChevronRight className="h-4 w-4 shrink-0" /></Link>}
-            </div>
+            </div>}
 
             <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:mt-8 lg:gap-2.5">
               <OverviewMetric
@@ -434,18 +372,10 @@ export function Dashboard() {
                 tone={budgetTone}
               />
               <div className="min-w-0">
-                <p className="text-lg font-semibold text-foreground">
-                  {data.bSummary.usageRate >= 1
-                    ? '预算已经超额'
-                    : data.bSummary.usageRate >= warnRate
-                      ? '接近预算上限'
-                      : '消费节奏健康'}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  已使用 {formatCurrency(data.bSummary.used, cur)}
-                  <br />
-                  总预算 {formatCurrency(data.bSummary.total, cur)}
-                </p>
+                <dl className="space-y-3 text-sm">
+                  <div><dt className="text-xs text-muted-foreground">已使用</dt><dd className="mt-1 font-semibold">{formatCurrency(data.bSummary.used, cur)}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">总预算</dt><dd className="mt-1 font-semibold">{formatCurrency(data.bSummary.total, cur)}</dd></div>
+                </dl>
               </div>
             </div>
 
@@ -495,7 +425,6 @@ export function Dashboard() {
           <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-4">
             <SectionTitle
               title="支出结构"
-              subtitle={data.expense > 0 ? `本月支出 ${formatCurrency(data.expense, cur)}` : undefined}
             />
             <CategoryDonut data={data.pieData} currency={cur} height={230} />
             {data.pieData.length > 0 && (
@@ -535,7 +464,6 @@ export function Dashboard() {
           <Card className="rounded-2xl border-border/70 p-5 sm:p-6 lg:col-span-5">
             <SectionTitle
               title="预算概览"
-              subtitle={`${formatPercent(data.bSummary.usageRate)} 已使用`}
               action={
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/app/budget">管理预算</Link>
@@ -550,9 +478,6 @@ export function Dashboard() {
                     {formatCurrency(data.bSummary.remaining, cur)}
                   </p>
                 </div>
-                <Badge tone={budgetTone === 'danger' ? 'rose' : budgetTone === 'warning' ? 'amber' : 'emerald'}>
-                  {budgetTone === 'danger' ? '已超支' : budgetTone === 'warning' ? '需留意' : '节奏良好'}
-                </Badge>
               </div>
               <ProgressBar
                 value={data.bSummary.usageRate}
@@ -632,7 +557,6 @@ export function Dashboard() {
                   {formatPercent(data.goalRate)}
                 </p>
               </div>
-              <span className="shrink-0 text-xs text-muted-foreground">{goals.length} 个目标</span>
             </div>
             <ProgressBar value={data.goalRate} tone="emerald" className="mt-4 h-1.5" />
             <div className="mt-5 grid grid-cols-2 gap-3">
@@ -662,14 +586,13 @@ export function Dashboard() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 财务健康
               </p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{data.health.grade}</p>
             </div>
           </div>
           <div className="border-t border-border/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
             <SectionTitle title="预算提醒" />
             <ReminderList
               reminders={data.budgetReminders}
-              emptyText="预算执行良好，暂无超支"
+              emptyText="暂无预算预警"
               max={3}
             />
           </div>
@@ -677,7 +600,7 @@ export function Dashboard() {
             <SectionTitle title="还款提醒" />
             <ReminderList
               reminders={data.loanReminders}
-              emptyText="近期没有待还款提醒"
+              emptyText="暂无还款提醒"
               max={3}
             />
           </div>
@@ -705,7 +628,6 @@ export function Dashboard() {
                 <IconReceipt className="h-6 w-6" weight="duotone" />
               </span>
               <p className="mt-4 text-sm font-medium text-foreground">还没有收支记录</p>
-              <p className="mt-1 text-sm text-muted-foreground">{isCurrentMonth ? '从今天的一笔收入或支出开始。' : '这个月还没有记账记录。'}</p>
               {isCurrentMonth && <Button className="mt-4 h-11 rounded-xl" onClick={() => setShowAdd(true)}><IconPlus />记第一笔</Button>}
             </div>
           ) : (
@@ -737,7 +659,6 @@ export function Dashboard() {
                           {t.category}
                           {t.note && <span className="text-muted-foreground"> · {t.note}</span>}
                         </p>
-                        <span className="hidden sm:inline-flex"><Badge tone="slate">{TRANSACTION_TYPE_LABELS[t.type]}</Badge></span>
                       </div>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
                         {t.date === todayStr() ? '今天' : t.date} · {t.paymentMethod}
@@ -778,7 +699,7 @@ export function Dashboard() {
 
       <section data-dashboard-spending className="order-5 mt-5 lg:hidden">
         <DashboardSectionHeading
-          title="钱花在哪了"
+          title="支出分类"
           action={<Button variant="ghost" size="sm" className="h-11 px-2" asChild><Link to="/app/reports">查看报表<IconChevronRight /></Link></Button>}
         />
         <Card className="rounded-2xl p-4">
@@ -804,7 +725,7 @@ export function Dashboard() {
                 );
               })}
             </div>
-          ) : <p className="py-4 text-center text-sm text-muted-foreground">这个月暂无支出，记账后会显示分类占比。</p>}
+          ) : <p className="py-4 text-center text-sm text-muted-foreground">本月暂无支出</p>}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3 text-xs">
             <span className="text-muted-foreground">储蓄率 · 目标 {settings.savingsRateTarget}%</span>
             <span className={data.income > 0 ? savingsOnTrack ? 'font-medium text-success' : 'font-medium text-warning' : 'text-muted-foreground'}>{data.income > 0 ? formatPercent(data.rate) : '暂无收入记录'}</span>
@@ -815,7 +736,15 @@ export function Dashboard() {
       <section className="order-6 mt-5 lg:hidden">
         <DashboardSectionHeading title="财务进度" />
         <div className="grid grid-cols-2 gap-3">
-          {([{ to:'/app/loans',label:'贷款待还',value:formatCurrency(data.loanRemaining,cur),hint:loans.filter(l=>l.remainingPrincipal>0).length+' 笔还款中',Icon:IconBank },{to:'/app/goals',label:'目标已积累',value:formatCurrency(data.goalSaved,cur),hint:goals.length ? formatPercent(data.goalRate)+' 已完成' : '还没有储蓄目标',Icon:IconTarget}]).map(({to,label,value,hint,Icon})=><Link key={to} to={to} className="glass-card min-w-0 rounded-2xl p-3.5 [container-type:inline-size]"><div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Icon className="h-4 w-4" />{label}<IconChevronRight className="ml-auto h-3 w-3" /></div><p data-dashboard-money title={value} style={{fontSize:`min(1.125rem, ${150/value.length}cqw)`}} className="mt-3 whitespace-nowrap text-sm font-semibold tabular-nums">{value}</p><p className="mt-1 text-[11px] text-muted-foreground">{hint}</p></Link>)}
+          {[
+            { to: '/app/loans', label: '贷款待还', value: formatCurrency(data.loanRemaining, cur), Icon: IconBank },
+            { to: '/app/goals', label: '目标已积累', value: formatCurrency(data.goalSaved, cur), Icon: IconTarget },
+          ].map(({ to, label, value, Icon }) => (
+            <Link key={to} to={to} className="glass-card min-w-0 rounded-2xl p-3.5 [container-type:inline-size]">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Icon className="h-4 w-4" />{label}<IconChevronRight className="ml-auto h-3 w-3" /></div>
+              <p data-dashboard-money title={value} style={{ fontSize: `min(1.125rem, ${150 / value.length}cqw)` }} className="mt-3 whitespace-nowrap text-sm font-semibold tabular-nums">{value}</p>
+            </Link>
+          ))}
         </div>
       </section>
 

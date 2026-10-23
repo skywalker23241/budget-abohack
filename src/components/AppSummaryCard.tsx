@@ -18,20 +18,16 @@ const accentTone: Record<AccentTone, string> = {
 };
 
 export function AppSummaryCard({
-  eyebrow,
   title,
   value,
-  subtitle,
   meta = [],
   accent = 'default',
   action,
   className,
   children,
 }: {
-  eyebrow?: string;
   title: string;
   value: ReactNode;
-  subtitle?: ReactNode;
   meta?: SummaryMeta[];
   accent?: AccentTone;
   action?: ReactNode;
@@ -62,18 +58,10 @@ export function AppSummaryCard({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
-          {eyebrow && (
-            <p className="text-xs font-medium text-muted-foreground">{eyebrow}</p>
-          )}
-          <p className="mt-1 text-sm text-muted-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground">{title}</p>
           <div className="mt-2 min-w-0 text-3xl font-semibold tracking-[-0.035em] [container-type:inline-size] sm:text-4xl">
             {typeof value === 'string' ? <AmountText value={value} maxSize={36} /> : value}
           </div>
-          {subtitle && (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              {subtitle}
-            </p>
-          )}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>

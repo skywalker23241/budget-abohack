@@ -14,8 +14,7 @@ import {
 import { formatCurrency, formatPercent, safeNumber, addMonths, currentMonth, formatMonthLabel } from '@/lib/format';
 import { PageHeader } from '@/components/PageHeader';
 import { AppSummaryCard } from '@/components/AppSummaryCard';
-import { MobileCollapsibleSection } from '@/components/MobileCollapsibleSection';
-import { Card, StatCard, ProgressBar, Badge, EmptyState, Button, Input } from '@/components/ui';
+import { Card, ProgressBar, EmptyState, Button, Input } from '@/components/ui';
 import { Modal } from '@/components/Modal';
 import { GoalForm } from '@/components/forms/GoalForm';
 import { Field } from '@/components/forms/fields';
@@ -31,11 +30,6 @@ import {
   IconArrowDown,
 } from '@/components/Icons';
 
-const STATUS_META = {
-  completed: { tone: 'emerald' as const, label: '已完成' },
-  behind: { tone: 'rose' as const, label: '进度落后' },
-  in_progress: { tone: 'brand' as const, label: '进行中' },
-};
 
 /** 更新进度弹窗 */
 function ContributeModal({
@@ -157,16 +151,8 @@ export function Goals() {
       />
 
       <AppSummaryCard
-        eyebrow="目标进度"
-        title={goals.length > 0 ? '已积累金额' : '还没有目标'}
-        value={goals.length > 0 ? formatCurrency(summary.saved, cur) : '先定一个'}
-        subtitle={
-          goals.length === 0
-            ? undefined
-            : behindGoals > 0
-              ? `${behindGoals} 个目标进度落后`
-              : `已完成 ${formatPercent(summary.progress)}`
-        }
+        title="已积累金额"
+        value={formatCurrency(summary.saved, cur)}
         accent={
           summary.progress >= 1
             ? 'success'
@@ -185,44 +171,11 @@ export function Goals() {
         {goals.length > 0 && <ProgressBar value={summary.progress} className="h-1.5" />}
       </AppSummaryCard>
 
-      {goals.length > 0 && (
-        <MobileCollapsibleSection
-          className="mt-4 hidden lg:block"
-          title="目标概览"
-          subtitle={`总进度 ${formatPercent(summary.progress)}，本月建议 ${formatCurrency(
-            summary.suggested,
-            cur,
-          )}`}
-        >
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <StatCard
-              label="目标总数"
-              value={goals.length}
-              icon={<IconTarget className="h-4 w-4" />}
-              tone="brand"
-            />
-            <StatCard label="目标总额" value={formatCurrency(summary.target, cur)} />
-            <StatCard
-              label="已积累"
-              value={formatCurrency(summary.saved, cur)}
-              tone="income"
-              hint={`总进度 ${formatPercent(summary.progress)}`}
-            />
-            <StatCard
-              label="本月建议投入"
-              value={formatCurrency(summary.suggested, cur)}
-              tone="warning"
-            />
-          </div>
-        </MobileCollapsibleSection>
-      )}
-
       <div className="mt-4">
         {goals.length === 0 ? (
           <EmptyState
             icon={<IconTarget className="h-6 w-6" />}
             title="还没有财务目标"
-            description="添加储蓄、应急金或还贷目标"
             action={
               <Button onClick={openAdd}>
                 <IconPlus className="h-4 w-4" />
@@ -238,7 +191,6 @@ export function Goals() {
               const months = goalMonthsToComplete(g);
               const suggested = goalSuggestedMonthly(g);
               const status = goalStatus(g);
-              const meta = STATUS_META[status];
               const eta =
                 months === 0
                   ? '已达成'
@@ -253,8 +205,6 @@ export function Goals() {
                         <span className="min-w-0 break-words font-semibold text-foreground">
                           {g.name}
                         </span>
-                        <Badge tone="blue">{g.type}</Badge>
-                        <Badge tone={meta.tone}>{meta.label}</Badge>
                       </div>
                       <p className="mt-1 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                         截止 {g.deadline}

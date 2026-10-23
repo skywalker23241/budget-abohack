@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { Modal } from './Modal';
 import { Button, Switch } from './ui';
-import { IconUpload, ShieldCheck } from './Icons';
+import { IconUpload } from './Icons';
 import { useToast } from './Toast';
 import { useStore } from '@/store/useStore';
 import { INCOME_CATEGORIES } from '@/lib/constants';
@@ -92,8 +92,7 @@ export function BillImportDialog({ open, onClose, onImported }: {
 
   return (
     <Modal open={open} onClose={close} title="导入支付宝 / 微信账单" maxWidth="max-w-4xl" footer={
-      <div className="flex w-full flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">追加到记账记录，保留现有账本。</p>
+      <div className="flex w-full flex-wrap items-center justify-end gap-3">
         <div className="flex gap-2">
           <Button variant="outline" onClick={close}>取消</Button>
           <Button disabled={reading || !selected.length || currency !== 'CNY'} onClick={commit}>确认导入 {selected.length} 笔</Button>
@@ -101,14 +100,10 @@ export function BillImportDialog({ open, onClose, onImported }: {
       </div>
     }>
       <div className="space-y-5">
-        <div className="flex items-start gap-3 rounded-2xl border border-primary/15 bg-primary/[0.07] p-4 text-sm">
-          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-accent-foreground" />
-          <div><p className="font-medium">在本机读取，确认后入账</p><p className="mt-1 text-xs leading-6 text-muted-foreground">不会上传账单文件。导入后可像普通记录一样编辑、删除，并参与预算与报表统计。</p></div>
-        </div>
         <div className="rounded-2xl border border-dashed border-input bg-card/30 p-5">
           <input ref={fileInput} type="file" accept=".csv,.xlsx,.txt" className="sr-only" aria-label="选择支付宝或微信账单文件" onChange={pickFile} />
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="min-w-0"><p className="break-all text-sm font-medium">{filename || '选择解压后的原始账单'}</p><p className="mt-1 text-xs leading-6 text-muted-foreground">支持 CSV、Excel（.xlsx），自动识别平台与 UTF-8 / GBK 编码。单次最多 10 MB、20,000 行。</p></div>
+            <div className="min-w-0"><p className="break-all text-sm font-medium">{filename || '支付宝 / 微信账单'}</p><p className="mt-1 text-xs text-muted-foreground">CSV / XLSX · 最大 10 MB</p></div>
             <Button variant="outline" disabled={reading} onClick={() => fileInput.current?.click()}><IconUpload />{reading ? '正在解析…' : filename ? '重新选择' : '选择账单文件'}</Button>
           </div>
         </div>
@@ -129,8 +124,7 @@ export function BillImportDialog({ open, onClose, onImported }: {
             <div><p className="text-xs text-muted-foreground">收入</p><p className="mt-2 break-all text-sm font-semibold text-success">{formatCurrency(totals.income / 100)}</p></div>
             <div><p className="text-xs text-muted-foreground">支出</p><p className="mt-2 break-all text-sm font-semibold text-destructive">{formatCurrency(totals.expense / 100)}</p></div>
           </div>
-          <p className="text-xs leading-6 text-muted-foreground">按平台交易单号去重；没有单号时按时间、金额和交易内容去重。手工记过的记录、跨平台的同一笔交易需要自行核对。分类为自动建议，可在下方调整。</p>
-          {duplicates.length > 0 && <p className="rounded-xl bg-muted/40 p-3 text-xs leading-6 text-muted-foreground">{duplicates.length} 笔记录已存在或在本文件内重复，已自动排除。重新导入不会覆盖或更新原记录。</p>}
+          <p className="text-xs text-muted-foreground">请核对分类、手工记录和跨平台重复交易。</p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" checked={fresh.length > 0 && selected.length === fresh.length} disabled={!fresh.length} onChange={(event) => setExcluded(event.target.checked ? new Set() : new Set(fresh.map((entry) => entry.row)))} />全选可导入记录</label>
             <div className="flex items-center gap-2"><label htmlFor="import-budget" className="text-xs text-muted-foreground">支出计入预算</label><Switch id="import-budget" checked={budget} onCheckedChange={setBudget} /></div>

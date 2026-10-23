@@ -19,7 +19,6 @@ export function Field({
   required,
   error,
   children,
-  hint,
   id,
   className = '',
 }: {
@@ -27,7 +26,6 @@ export function Field({
   required?: boolean;
   error?: string;
   children: ReactNode;
-  hint?: string;
   id?: string;
   className?: string;
 }) {
@@ -38,9 +36,6 @@ export function Field({
         {required && <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>}
       </Label>
       {children}
-      {hint && !error && (
-        <p className="mt-1 break-words text-xs text-muted-foreground">{hint}</p>
-      )}
       {error && <p id={id ? `${id}-error` : undefined} className="mt-1 break-words text-xs text-destructive">{error}</p>}
     </div>
   );

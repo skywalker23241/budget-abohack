@@ -10,7 +10,7 @@ import { currentMonth, formatCurrency, formatPercent, prevMonth, formatMonthLabe
 import { PageHeader } from '@/components/PageHeader';
 import { AppSummaryCard } from '@/components/AppSummaryCard';
 import { MonthPicker } from '@/components/MonthPicker';
-import { StatCard, Card, ProgressBar, Badge, EmptyState, Button } from '@/components/ui';
+import { Card, ProgressBar, EmptyState, Button } from '@/components/ui';
 import { Modal } from '@/components/Modal';
 import { BudgetForm } from '@/components/forms/BudgetForm';
 import { useConfirm } from '@/components/ConfirmDialog';
@@ -54,7 +54,6 @@ export function BudgetPage() {
     [list]
   );
   const existingCategories = list.map((b) => b.category);
-  const riskiestBudget = sorted[0];
   const watchCount = sorted.filter((b) => b.status !== 'normal').length;
   const summaryAccent =
     summary.usageRate >= 1
@@ -102,13 +101,19 @@ export function BudgetPage() {
             </Button>
         }
       />
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <MonthPicker month={month} onChange={setMonth} compact />
-        <Button variant="ghost" className="h-11 rounded-xl px-2 text-xs" onClick={handleCopy} title="复制上月预算到所选月份"><IconDownload />复制上月</Button>
+      <div className="mb-4 flex justify-end">
+        <div role="group" aria-label="预算月份与复制" className="glass-button inline-flex items-center rounded-2xl border-primary/30 bg-primary/10 p-1">
+          <MonthPicker
+            month={month}
+            onChange={setMonth}
+            className="rounded-xl border-transparent bg-transparent bg-none shadow-none hover:border-transparent hover:bg-primary/20 data-[state=open]:border-transparent data-[state=open]:bg-primary/20"
+          />
+          <span aria-hidden="true" className="mx-1 h-5 w-px bg-primary/30" />
+          <Button variant="ghost" className="h-11 rounded-xl px-3 text-xs text-accent-foreground hover:bg-primary/20" onClick={handleCopy} title="复制上月预算到所选月份"><IconDownload />复制上月</Button>
+        </div>
       </div>
 
       <AppSummaryCard
-        eyebrow={formatMonthLabel(month)}
         title={
           summary.total === 0
             ? '分类预算'
@@ -121,15 +126,6 @@ export function BudgetPage() {
             ? '未设置'
             : formatCurrency(Math.abs(summary.remaining), cur)
         }
-        subtitle={
-          summary.total === 0
-            ? undefined
-            : riskiestBudget
-              ? `${riskiestBudget.category} · 已用 ${formatPercent(
-                  riskiestBudget.usageRate,
-                )}`
-              : undefined
-        }
         accent={summaryAccent}
         meta={[
           { label: '总预算', value: formatCurrency(summary.total, cur) },
@@ -139,59 +135,6 @@ export function BudgetPage() {
       >
         {summary.total > 0 && <ProgressBar value={summary.usageRate} tone={summary.usageRate >= 1 ? 'rose' : summary.usageRate >= warnRate ? 'amber' : 'brand'} className="h-1.5" />}
       </AppSummaryCard>
-
-      {/* 总览 */}
-      <div className="mt-4 hidden grid-cols-2 gap-3 sm:gap-4 lg:grid lg:grid-cols-4">
-        <StatCard
-          label="本月总预算"
-          value={formatCurrency(summary.total, cur)}
-          icon={<IconWallet className="h-4 w-4" />}
-          tone="brand"
-        />
-        <StatCard
-          label="本月已使用"
-          value={formatCurrency(summary.used, cur)}
-          tone="expense"
-        />
-        <StatCard
-          label="本月剩余"
-          value={formatCurrency(summary.remaining, cur)}
-          tone={summary.remaining >= 0 ? 'income' : 'expense'}
-        />
-        <StatCard
-          label="预算使用率"
-          value={formatPercent(summary.usageRate)}
-          tone={
-            summary.usageRate >= 1
-              ? 'expense'
-              : summary.usageRate >= warnRate
-                ? 'warning'
-                : 'default'
-          }
-        />
-      </div>
-
-      {/* 总进度 */}
-      {summary.total > 0 && (
-        <Card className="mt-4 hidden lg:block">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
-            <span className="font-medium text-foreground">总预算执行进度</span>
-            <span className="break-words text-muted-foreground [overflow-wrap:anywhere]">
-              {formatCurrency(summary.used, cur)} / {formatCurrency(summary.total, cur)}
-            </span>
-          </div>
-          <ProgressBar
-            value={summary.usageRate}
-            tone={
-              summary.usageRate >= 1
-                ? 'rose'
-                : summary.usageRate >= warnRate
-                  ? 'amber'
-                  : 'emerald'
-            }
-          />
-        </Card>
-      )}
 
       {/* 预算列表 */}
       <div className="mt-4">
@@ -203,7 +146,6 @@ export function BudgetPage() {
           <EmptyState
             icon={<IconWallet className="h-6 w-6" />}
             title={`${formatMonthLabel(month)} 还没有预算`}
-            description="新增预算，或复制上月预算"
             action={
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleCopy}>
@@ -224,56 +166,59 @@ export function BudgetPage() {
                 <Card
                   key={b.id}
                   className={cn(
-                    b.status === 'exceeded' && 'ring-1 ring-destructive/30',
+                    'p-4 sm:p-5',
+                    b.status === 'exceeded' && 'border-destructive/25',
                     budgetView === 'watch' && b.status === 'normal' && 'hidden lg:block',
                   )}
                 >
-                  <div className="flex min-w-0 items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <CategoryIcon category={b.category} className="h-4 w-4 text-muted-foreground" />
-                        <span className="min-w-0 break-words font-medium text-foreground">
-                          {b.category}
-                        </span>
-                        <Badge tone={meta.tone}>{meta.label}</Badge>
-                      </div>
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-accent-foreground">
+                        <CategoryIcon category={b.category} className="h-4 w-4" />
+                      </span>
+                      <h2 className="min-w-0 break-words text-sm font-semibold text-foreground">{b.category}</h2>
                     </div>
-                    <div className="flex shrink-0">
+                    <div className="-mr-2 flex shrink-0">
                       <button
+                        type="button"
                         onClick={() => openEdit(b)}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
-                        aria-label="编辑"
+                        className="app-press flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={`编辑${b.category}预算`}
                       >
                         <IconEdit className="h-4 w-4" />
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(b)}
+                        className="app-press flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={`删除${b.category}预算`}
+                      >
+                        <IconTrash className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-4 text-xs">
-                    <div className="min-w-0"><p className="mb-1 text-muted-foreground">已使用</p><AmountText value={formatCurrency(b.used,cur)} maxSize={18}/></div>
-                    <div className="min-w-0"><p className="mb-1 text-muted-foreground">分类预算</p><AmountText value={formatCurrency(b.amount,cur)} maxSize={18}/></div>
+                  <div className="mt-3 grid grid-cols-2 items-end gap-4">
+                    <div className="min-w-0">
+                      <p className="mb-1 text-xs text-muted-foreground">已用</p>
+                      <AmountText value={formatCurrency(b.used, cur)} maxSize={26} />
+                    </div>
+                    <div className="min-w-0 text-right">
+                      <p className="mb-1 text-xs text-muted-foreground">预算</p>
+                      <AmountText className="text-muted-foreground" value={formatCurrency(b.amount, cur)} maxSize={18} />
+                    </div>
                   </div>
                   <div className="mt-3">
-                    <ProgressBar value={b.usageRate} tone={meta.bar} />
-                    <div className="mt-1.5 flex items-center justify-between text-xs">
-                      <span
-                        className={
-                          b.status === 'exceeded' ? 'text-destructive' : 'text-muted-foreground'
-                        }
+                    <ProgressBar value={b.usageRate} tone={meta.bar} className="h-1.5" />
+                    <div className="mt-2 flex items-center justify-between gap-4 text-xs">
+                      <div
+                        className={cn('flex min-w-0 flex-1 items-center gap-1.5', b.remaining < 0 ? 'text-destructive' : 'text-muted-foreground')}
                       >
-                        {formatPercent(b.usageRate)}
-                      </span>
-                      <span
-                        className={cn('flex w-[65%] min-w-0 items-center justify-end gap-2',
-                          b.remaining < 0
-                            ? 'font-medium text-destructive'
-                            : 'text-muted-foreground'
-                        )}
-                      >
-                        <span className="shrink-0">{b.remaining >= 0 ? '剩余' : '超支'}</span><AmountText className="min-w-0 flex-1 text-right" value={formatCurrency(Math.abs(b.remaining),cur)} maxSize={14}/>
-                      </span>
+                        <span className="shrink-0">{b.remaining >= 0 ? '剩余' : '超支'}</span>
+                        <AmountText className="min-w-0 flex-1" value={formatCurrency(Math.abs(b.remaining), cur)} maxSize={13} />
+                      </div>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">{formatPercent(b.usageRate)}</span>
                     </div>
                   </div>
-                  <details className="mt-1 text-xs text-muted-foreground"><summary className="flex min-h-11 cursor-pointer items-center">管理此分类</summary><Button type="button" variant="ghost" className="h-11 w-full text-destructive" onClick={()=>handleDelete(b)}><IconTrash/>删除预算</Button></details>
                 </Card>
               );
             })}

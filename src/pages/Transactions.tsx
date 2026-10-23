@@ -16,7 +16,7 @@ import {
 import { formatCurrency } from '@/lib/format';
 import { getExpenseCategories } from '@/lib/categories';
 import { PageHeader } from '@/components/PageHeader';
-import { Badge, EmptyState, Button, Input, Label } from '@/components/ui';
+import { EmptyState, Button, Input, Label } from '@/components/ui';
 import { SelectField } from '@/components/forms/fields';
 import { Modal } from '@/components/Modal';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -52,15 +52,6 @@ type TransactionGroup = {
   items: Transaction[];
 };
 
-function typeBadge(type: TransactionType) {
-  const map: Record<TransactionType, 'emerald' | 'rose' | 'blue' | 'amber'> = {
-    income: 'emerald',
-    expense: 'rose',
-    transfer: 'blue',
-    loan_repayment: 'amber',
-  };
-  return <Badge tone={map[type]}>{TRANSACTION_TYPE_LABELS[type]}</Badge>;
-}
 
 function formatDateHeader(date: string): string {
   const parsed = new Date(`${date}T00:00:00`);
@@ -303,17 +294,6 @@ export function Transactions() {
                           <span className="truncate text-sm font-medium text-foreground">
                             {t.category}
                           </span>
-                          <span className="hidden sm:inline-flex">{typeBadge(t.type)}</span>
-                          {t.isFixed && (
-                            <span className="hidden sm:inline-flex">
-                              <Badge tone="slate">固定</Badge>
-                            </span>
-                          )}
-                          {!t.countInBudget && t.type !== 'income' && (
-                            <span className="hidden sm:inline-flex">
-                              <Badge tone="slate">不计预算</Badge>
-                            </span>
-                          )}
                         </div>
                         <p className="mt-1 truncate text-xs text-muted-foreground">
                           {t.paymentMethod}
@@ -416,11 +396,8 @@ export function Transactions() {
         <EmptyState
           icon={<IconReceipt className="h-6 w-6" />}
           title={hasFilter ? '没有符合条件的记录' : '还没有任何记录'}
-          description={
-            hasFilter ? '试试调整筛选条件' : '点击「记一笔」开始记录你的第一笔收支'
-          }
           action={
-            !hasFilter && (
+            hasFilter ? <Button variant="outline" onClick={resetFilters}>重置筛选</Button> : (
               <Button onClick={openAdd}>
                 <IconPlus className="h-4 w-4" />
                 记一笔

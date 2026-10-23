@@ -113,7 +113,6 @@ export function Loans() {
       <header className="mb-5 flex min-w-0 items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">贷款管理</h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">管理月供，跟进每一期还款</p>
         </div>
           <Button onClick={openAdd} className="h-11 shrink-0 rounded-2xl px-3 sm:px-4">
             <IconPlus className="h-4 w-4" />
@@ -138,14 +137,12 @@ export function Loans() {
             <p className={`mt-1 text-sm font-semibold sm:text-base ${monthIncome > 0 && ratio > 0.4 ? 'text-destructive' : 'text-foreground'}`}>{monthIncome > 0 ? formatPercent(ratio) : '暂无收入记录'}</p>
           </div>
         </div>
-        <div className="relative mt-4 flex min-w-0 items-center gap-2 border-t border-border/60 pt-3 text-xs">
-          {nextRepayment ? <>
+        {nextRepayment && <div className="relative mt-4 flex min-w-0 items-center gap-2 border-t border-border/60 pt-3 text-xs">
             <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${nextRepayment.days <= 3 ? 'bg-warning' : 'bg-primary'}`} />
             <span className="shrink-0 text-muted-foreground">最近还款日</span>
             <span className="min-w-0 flex-1 truncate font-medium">{nextRepayment.loan.name}</span>
             <span className={`shrink-0 font-medium ${nextRepayment.days <= 3 ? 'text-warning' : 'text-accent-foreground'}`}>{nextRepayment.days === 0 ? '今天' : `${nextRepayment.days} 天后`}</span>
-          </> : <><IconCheckCircle className="h-4 w-4 shrink-0 text-success" /><span className="text-muted-foreground">{loans.length ? '所有贷款均已结清' : '添加贷款后，在这里查看还款计划'}</span></>}
-        </div>
+        </div>}
       </Card>
 
       <div className="mt-4">
@@ -153,7 +150,6 @@ export function Loans() {
           <EmptyState
             icon={<IconBank className="h-6 w-6" />}
             title="还没有贷款记录"
-            description="添加房贷、车贷或其他贷款"
             action={
               <Button onClick={openAdd}>
                 <IconPlus className="h-4 w-4" />
@@ -170,7 +166,7 @@ export function Loans() {
               </button>
             ))}
           </div>
-          {visibleLoans.length === 0 ? <EmptyState icon={<IconCheckCircle className="h-6 w-6" />} title={view === 'active' ? '当前没有待还贷款' : '还没有已结清的贷款'} description={view === 'active' ? '已结清的贷款可在「已结清」中查看。' : '结清后的贷款会保留在这里，方便回顾。'} /> : <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+          {visibleLoans.length === 0 ? <EmptyState icon={<IconCheckCircle className="h-6 w-6" />} title={view === 'active' ? '当前没有待还贷款' : '还没有已结清的贷款'} /> : <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
             {visibleLoans.map((l) => {
               const progress = loanProgress(l);
               const remPeriods = remainingPeriods(l);
@@ -186,7 +182,6 @@ export function Loans() {
                       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${paidOff ? 'bg-success/10 text-success' : 'bg-primary/10 text-accent-foreground'}`}><LoanIcon className="h-5 w-5" weight="duotone" /></span>
                       <div className="min-w-0">
                         <h2 className="break-words text-base font-semibold text-foreground [overflow-wrap:anywhere]">{l.name}</h2>
-                        <p className="mt-1 text-xs text-muted-foreground">{l.platform ?? '未设置平台'}<span className="mx-1.5 text-border">/</span>{l.type}</p>
                       </div>
                     </div>
                       <button
@@ -219,7 +214,6 @@ export function Loans() {
                       <span>
                         已还 {l.paidPeriods} / {l.termMonths} 期
                       </span>
-                      <span className={paidOff ? 'text-success' : ''}>{paidOff ? '已结清' : `${formatPercent(progress)} 已完成`}</span>
                     </div>
                     <ProgressBar value={paidOff ? 1 : progress} tone={paidOff ? 'emerald' : 'brand'} className="h-1.5" />
                   </div>
@@ -231,6 +225,8 @@ export function Loans() {
                     </summary>
                     <div className="space-y-3 border-t border-border/50 pb-3 pt-3 text-xs">
                       <dl className="grid grid-cols-2 gap-3">
+                        {l.platform && <div><dt className="text-muted-foreground">平台</dt><dd className="mt-1 font-medium">{l.platform}</dd></div>}
+                        <div><dt className="text-muted-foreground">还款计算</dt><dd className="mt-1 font-medium">等额本息估算</dd></div>
                         <div className="min-w-0"><dt className="text-muted-foreground">初始本金</dt><dd className="mt-1 break-words font-medium [overflow-wrap:anywhere]">{formatCurrency(l.principal, cur)}</dd></div>
                         <div><dt className="text-muted-foreground">年利率</dt><dd className="mt-1 font-medium">{l.annualRate}%</dd></div>
                         <div><dt className="text-muted-foreground">开始日期</dt><dd className="mt-1 font-medium">{l.startDate}</dd></div>
@@ -249,7 +245,6 @@ export function Loans() {
                     >
                       <IconCheck className="h-4 w-4" />
                       记录本期还款
-                      {dueSoon && <span className="text-[11px] opacity-75">· {days === 0 ? '今天还款日' : `${days} 天后还款`}</span>}
                     </Button>
                   )}
                 </Card>
@@ -270,9 +265,6 @@ export function Loans() {
         <LoanForm initial={editing ?? undefined} onClose={() => setShowForm(false)} />
       </Modal>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        本金 / 利息按等额本息近似计算
-      </p>
     </>
   );
 }

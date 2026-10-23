@@ -20,14 +20,12 @@ import {
   currentMonth,
   addMonths,
   formatCurrency,
-  formatPercent,
   formatMonthLabel,
-  monthOf,
 } from '@/lib/format';
 import { PageHeader } from '@/components/PageHeader';
 import { AppSummaryCard } from '@/components/AppSummaryCard';
 import { MobileCollapsibleSection } from '@/components/MobileCollapsibleSection';
-import { Card, StatCard, SectionTitle, Badge, EmptyState, Button } from '@/components/ui';
+import { Card, SectionTitle, EmptyState, Button } from '@/components/ui';
 import { CategoryDonut, useChartTheme } from '@/components/charts';
 import { Modal } from '@/components/Modal';
 import { IncomeForm } from '@/components/forms/IncomeForm';
@@ -142,14 +140,8 @@ export function Income() {
 
       <div className="order-2">
       <AppSummaryCard
-        eyebrow={formatMonthLabel(month)}
         title="本月已到账收入"
         value={formatCurrency(stats.total, cur)}
-        subtitle={
-          stats.total > 0
-            ? `固定收入占 ${formatPercent(stats.fixed / stats.total)}`
-            : undefined
-        }
         accent={stats.total > 0 ? 'success' : 'default'}
         meta={[
           { label: '固定收入', value: formatCurrency(stats.fixed, cur) },
@@ -157,21 +149,6 @@ export function Income() {
           { label: '收入来源', value: `${incomeSources.length} 个` },
         ]}
       />
-      </div>
-
-      <div className="order-3 mt-4 hidden grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid">
-        <StatCard
-          label={`${formatMonthLabel(month)}总收入`}
-          value={formatCurrency(stats.total, cur)}
-          tone="income"
-          icon={<IconCoins className="h-4 w-4" />}
-        />
-        <StatCard label="固定收入" value={formatCurrency(stats.fixed, cur)} tone="brand" />
-        <StatCard
-          label="非固定收入"
-          value={formatCurrency(stats.variable, cur)}
-          tone="default"
-        />
       </div>
 
       {/* 图表 */}
@@ -237,7 +214,6 @@ export function Income() {
       <MobileCollapsibleSection
         className="order-4 mt-4 lg:order-5"
         title="收入来源与到账"
-        subtitle={`${incomeSources.length} 个来源，最近 ${stats.arrivals.length} 条到账`}
         defaultOpen
         alwaysOpen
       >
@@ -248,7 +224,6 @@ export function Income() {
             <EmptyState
               icon={<IconCoins className="h-6 w-6" />}
               title="还没有收入来源"
-              description="添加你的工资、副业等收入来源"
               action={
                 <Button onClick={openAdd}>
                   <IconPlus className="h-4 w-4" />
@@ -271,11 +246,9 @@ export function Income() {
                       <span className="min-w-0 break-words font-medium text-foreground">
                         {s.name}
                       </span>
-                      <Badge tone="brand">{s.type}</Badge>
-                      {s.isFixed && <Badge tone="slate">固定</Badge>}
                     </div>
                     <AmountText className="mt-2 text-success" value={formatCurrency(s.amount,cur)} maxSize={20}/>
-                    <p className="mt-1 text-xs text-muted-foreground">{s.isFixed?`每月 ${s.payday} 日到账`:'非固定收入'}{s.note ? ` · ${s.note}` : ''}</p>
+                    {(s.isFixed || s.note) && <p className="mt-1 text-xs text-muted-foreground">{s.isFixed ? `每月 ${s.payday} 日` : ''}{s.note ? `${s.isFixed ? ' · ' : ''}${s.note}` : ''}</p>}
                   </div>
                   <div className="col-span-2 flex gap-2 border-t border-border/50 pt-2">
                   <Button
@@ -326,9 +299,6 @@ export function Income() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {t.date}
-                      {monthOf(t.date) === month && (
-                        <span className="ml-1 text-success">本月</span>
-                      )}
                     </p>
                   </div>
                   <AmountText className="w-[44%] shrink-0 text-right text-success" value={`+${formatCurrency(t.amount,cur)}`} maxSize={16}/>
